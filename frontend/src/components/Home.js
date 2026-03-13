@@ -1,117 +1,201 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import './Home.css';
+import cityBg from '../assets/images/city.jpg';
 
-function Home() {
-    return (
-        <div style={styles.container}>
-            <h1 style={styles.title}>🎓 Grade 12 Exam Preparation App</h1>
-            <p style={styles.subtitle}>Your ultimate study companion for matric success!</p>
-            
-            <div style={styles.features}>
-                <div style={styles.featureCard}>
-                    <h3>📚 Question Papers</h3>
-                    <p>Access past exam papers with memos</p>
-                </div>
-                
-                <div style={styles.featureCard}>
-                    <h3>📝 Interactive Quizzes</h3>
-                    <p>Test your knowledge with subject quizzes</p>
-                </div>
-                
-                <div style={styles.featureCard}>
-                    <h3>🤝 Tutor Chat</h3>
-                    <p>Get help when you're stuck</p>
-                </div>
-                
-                <div style={styles.featureCard}>
-                    <h3>📊 Progress Tracking</h3>
-                    <p>Monitor your improvement</p>
-                </div>
-            </div>
-            
-            <div style={styles.subjectsSection}>
-                <h2>Available Subjects</h2>
-                <div style={styles.subjectGrid}>
-                    {['Mathematics', 'Physical Sciences', 'Life Sciences', 'Accounting', 'Geography', 'English'].map(subject => (
-                        <div key={subject} style={styles.subjectCard}>
-                            {subject}
-                        </div>
-                    ))}
-                </div>
-            </div>
-            
-            <div style={styles.ctaSection}>
-                <Link to="/subjects" style={styles.ctaButton}>
-                    Get Started
-                </Link>
-            </div>
+const Home = () => {
+  return (
+    <div className="home-container">
+      {/* Navigation */}
+      <nav className="navbar">
+        <div className="nav-logo">
+          <h1>Grade 12 Central</h1>
         </div>
-    );
-}
+        <ul className="nav-menu">
+          <li><a href="/" className="active">Home</a></li>
+          <li><a href="/study-guides">Study Guides</a></li>
+          <li><a href="/practice-exams">Practice Exams</a></li>
+          <li><a href="/features">Features</a></li>
+          <li><a href="/login" className="login-btn">Log In</a></li>
+        </ul>
+        <div className="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </nav>
 
-const styles = {
-    container: {
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '20px',
-        fontFamily: 'Arial, sans-serif',
-    },
-    title: {
-        color: '#2c3e50',
-        fontSize: '2.5em',
-        textAlign: 'center',
-        marginBottom: '10px',
-    },
-    subtitle: {
-        color: '#7f8c8d',
-        fontSize: '1.2em',
-        textAlign: 'center',
-        marginBottom: '40px',
-    },
-    features: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '20px',
-        marginBottom: '40px',
-    },
-    featureCard: {
-        padding: '20px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '8px',
-        textAlign: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    },
-    subjectsSection: {
-        marginBottom: '40px',
-    },
-    subjectGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '15px',
-        marginTop: '20px',
-    },
-    subjectCard: {
-        padding: '15px',
-        backgroundColor: '#e3f2fd',
-        borderRadius: '6px',
-        textAlign: 'center',
-        cursor: 'pointer',
-        transition: 'transform 0.2s',
-    },
-    ctaSection: {
-        textAlign: 'center',
-        marginTop: '40px',
-    },
-    ctaButton: {
-        display: 'inline-block',
-        padding: '15px 40px',
-        backgroundColor: '#007bff',
-        color: 'white',
-        textDecoration: 'none',
-        borderRadius: '5px',
-        fontSize: '1.2em',
-        fontWeight: 'bold',
-    },
+      {/* Hero Section with City Background */}
+      <section 
+        className="hero-section" 
+        style={{ backgroundImage: `url(${cityBg})` }}
+      >
+        <div className="hero-overlay"></div>
+        <div className="hero-content">
+          <h1>Ace Your Matric Year with <span className="highlight">Grade 12 Central!</span></h1>
+          <p className="hero-subtitle">The ultimate exam prep app for Grade 12 students.</p>
+          <div className="hero-buttons">
+            <button className="btn btn-primary">Get Started</button>
+            <button className="btn btn-secondary">Watch Demo</button>
+          </div>
+        </div>
+        <div className="hero-image">
+          <div className="image-container">
+            <img 
+              src="/images/late-night study session illuminated.png" 
+              alt="Student studying late night" 
+              className="hero-img" 
+            />
+            <div className="image-glow"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="features-section">
+        <div className="section-header">
+          <h2>Everything You Need to Succeed</h2>
+          <p className="section-subtitle">Powerful features designed to help you ace your exams</p>
+        </div>
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">📚</div>
+            <h3>Past Exam Papers</h3>
+            <p>Access over 1,000+ NSC past exam papers and memos from previous years.</p>
+            <div className="feature-stats">1,200+ Papers</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">📝</div>
+            <h3>Interactive Quizzes</h3>
+            <p>Practice with topic-based quizzes and get instant feedback with explanations.</p>
+            <div className="feature-stats">500+ Quizzes</div>
+          </div>
+          <div className="feature-card">
+            <div className="feature-icon">📊</div>
+            <h3>Track Your Progress</h3>
+            <p>Monitor your performance and identify areas for improvement with detailed analytics.</p>
+            <div className="feature-stats">Real-time Tracking</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section with Counter */}
+      <section className="stats-section">
+        <div className="stats-overlay"></div>
+        <div className="stats-content">
+          <h2>Join Over <span className="highlight">500,000+</span> Grade 12 Learners</h2>
+          <p className="stats-subtitle">Preparing for success with Grade 12 Central</p>
+          <div className="stats-grid">
+            <div className="stat-item">
+              <div className="stat-number">98%</div>
+              <div className="stat-label">Pass Rate</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number">50+</div>
+              <div className="stat-label">Subjects</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number">24/7</div>
+              <div className="stat-label">Access</div>
+            </div>
+          </div>
+          <div className="store-buttons">
+            <button className="store-btn google">
+              <span className="store-icon">📱</span>
+              <span className="store-text">
+                <small>GET IT ON</small>
+                <strong>Google Play</strong>
+              </span>
+            </button>
+            <button className="store-btn apple">
+              <span className="store-icon">🍎</span>
+              <span className="store-text">
+                <small>Download on the</small>
+                <strong>App Store</strong>
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="testimonials-section">
+        <h2>What Our Users Say</h2>
+        <p className="section-subtitle">Join thousands of successful matriculants</p>
+        <div className="testimonials-grid">
+          <div className="testimonial-card">
+            <div className="testimonial-content">
+              <div className="quote-icon">"</div>
+              <p>This app made finding past papers so easy! I found all the resources I needed in one place.</p>
+            </div>
+            <div className="testimonial-author">
+              <div className="author-avatar">👩‍🎓</div>
+              <div className="author-info">
+                <strong>Sarah M.</strong>
+                <span>Matric 2023</span>
+              </div>
+            </div>
+          </div>
+          <div className="testimonial-card featured">
+            <div className="testimonial-content">
+              <div className="quote-icon">"</div>
+              <p>I love the quizzes and tracking my progress. It helped me improve from 60% to 85% in Maths!</p>
+            </div>
+            <div className="testimonial-author">
+              <div className="author-avatar">👨‍🎓</div>
+              <div className="author-info">
+                <strong>Jason K.</strong>
+                <span>Matric 2023</span>
+              </div>
+            </div>
+          </div>
+          <div className="testimonial-card">
+            <div className="testimonial-content">
+              <div className="quote-icon">"</div>
+              <p>Grade 12 Central boosted my confidence for exams! The past papers were exactly what I needed.</p>
+            </div>
+            <div className="testimonial-author">
+              <div className="author-avatar">👩‍🎓</div>
+              <div className="author-info">
+                <strong>Ayesha P.</strong>
+                <span>Matric 2023</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <div className="footer-section">
+            <h3>Grade 12 Central</h3>
+            <p>Your ultimate exam preparation partner</p>
+          </div>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="/about">About Us</a></li>
+              <li><a href="/contact">Contact</a></li>
+              <li><a href="/privacy">Privacy Policy</a></li>
+              <li><a href="/terms">Terms of Use</a></li>
+            </ul>
+          </div>
+          <div className="footer-section">
+            <h4>Follow Us</h4>
+            <div className="social-links">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-link">📘</a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-link">🐦</a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-link">📷</a>
+              <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="social-link">🎵</a>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <p>&copy; 2024 Grade 12 Central. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
 };
 
 export default Home;
