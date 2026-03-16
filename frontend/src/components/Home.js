@@ -1,8 +1,23 @@
 import React from 'react';
 import './Home.css';
 import cityBg from '../assets/images/city.jpg';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/signup');
+  };
+
+  const handleWatchDemo = () => {
+    window.open('https://www.youtube.com/watch?v=demo', '_blank');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="home-container">
       {/* Navigation */}
@@ -15,7 +30,9 @@ const Home = () => {
           <li><a href="/study-guides">Study Guides</a></li>
           <li><a href="/practice-exams">Practice Exams</a></li>
           <li><a href="/features">Features</a></li>
-          <li><a href="/login" className="login-btn">Log In</a></li>
+          <li>
+            <button onClick={handleLogin} className="login-btn">Log In</button>
+          </li>
         </ul>
         <div className="hamburger">
           <span></span>
@@ -34,8 +51,8 @@ const Home = () => {
           <h1>Ace Your Matric Year with <span className="highlight">Grade 12 Central!</span></h1>
           <p className="hero-subtitle">The ultimate exam prep app for Grade 12 students.</p>
           <div className="hero-buttons">
-            <button className="btn btn-primary">Get Started</button>
-            <button className="btn btn-secondary">Watch Demo</button>
+            <button onClick={handleGetStarted} className="btn btn-primary">Get Started</button>
+            <button onClick={handleWatchDemo} className="btn btn-secondary">Watch Demo</button>
           </div>
         </div>
         <div className="hero-image">
@@ -78,7 +95,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Stats Section with Counter */}
+      {/* Stats Section */}
       <section className="stats-section">
         <div className="stats-overlay"></div>
         <div className="stats-content">
