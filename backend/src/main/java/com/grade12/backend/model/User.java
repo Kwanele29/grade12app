@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.time.LocalDateTime;
+import java.time.LocalDateTime; // THIS IMPORT IS MISSING!
 
 @Entity
 @Table(name = "users")
@@ -38,6 +38,8 @@ public class User {
     
     @Column(name = "email_verified")
     private boolean emailVerified = false;
+    
+    private String category;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
