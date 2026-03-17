@@ -10,7 +10,8 @@ const SignUp = () => {
     surname: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    category: '' // New field for category
   });
 
   const [errors, setErrors] = useState({});
@@ -18,6 +19,7 @@ const SignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,13 +63,17 @@ const SignUp = () => {
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     } else if (!passwordRegex.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one number and one special character';
+      newErrors.password = 'Password must contain at least one number and one special character (!@#$%^&*)';
     }
 
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!formData.category) {
+      newErrors.category = 'Please select a category';
     }
 
     if (!agreeTerms) {
@@ -83,8 +89,18 @@ const SignUp = () => {
     
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
+      setErrors({});
+      setSuccessMessage('');
+      
       try {
-        // Send data to Spring Boot backend
+        console.log('Sending registration data to backend...', {
+          firstName: formData.name,
+          lastName: formData.surname,
+          email: formData.email,
+          password: formData.password,
+          category: formData.category
+        });
+        
         const response = await fetch('http://localhost:8080/api/auth/register', {
           method: 'POST',
           headers: {
@@ -94,25 +110,45 @@ const SignUp = () => {
             firstName: formData.name,
             lastName: formData.surname,
             email: formData.email,
-            password: formData.password
+            password: formData.password,
+            category: formData.category // Include category in request
           }),
         });
 
         const data = await response.json();
+        console.log('Backend response:', data);
 
         if (response.ok) {
-          // Store token in localStorage
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          // Registration successful
+          setSuccessMessage('Account created successfully! Redirecting to login...');
           
-          // Navigate to dashboard
-          navigate('/dashboard');
+          // Clear form
+          setFormData({
+            name: '',
+            surname: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            category: ''
+          });
+          setAgreeTerms(false);
+          
+          // Redirect to login page after 2 seconds
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+          
         } else {
-          setErrors({ submit: data.message || 'Registration failed. Please try again.' });
+          // Registration failed
+          setErrors({ 
+            submit: data.message || 'Registration failed. Please try again.' 
+          });
         }
       } catch (error) {
         console.error('Signup error:', error);
-        setErrors({ submit: 'Network error. Please check your connection.' });
+        setErrors({ 
+          submit: 'Cannot connect to server. Please make sure the backend is running on http://localhost:8080' 
+        });
       } finally {
         setIsLoading(false);
       }
@@ -126,23 +162,6 @@ const SignUp = () => {
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   };
 
-  // Handle OAuth2 redirect response
-  React.useEffect(() => {
-    // Check if we have OAuth2 response in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const user = urlParams.get('user');
-    
-    if (token && user) {
-      // Store token and user data
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      // Navigate to dashboard
-      navigate('/dashboard');
-    }
-  }, [navigate]);
-
   return (
     <div className="signup-page">
       <div className="signup-background" style={{ backgroundImage: `url(${cityBg})` }}>
@@ -155,6 +174,12 @@ const SignUp = () => {
             <h1>Create Account</h1>
             <p>Join Grade 12 Central and start your journey to success</p>
           </div>
+
+          {successMessage && (
+            <div className="success-message">
+              {successMessage}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="signup-form">
             <div className="form-row">
@@ -202,6 +227,25 @@ const SignUp = () => {
                 disabled={isLoading}
               />
               {errors.email && <span className="error-message">{errors.email}</span>}
+            </div>
+
+            {/* Category Selection */}
+            <div className="form-group">
+              <label htmlFor="category">I am a:</label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className={errors.category ? 'error' : ''}
+                disabled={isLoading}
+              >
+                <option value="">Select your role</option>
+                <option value="student">Student</option>
+                <option value="tutor">Tutor</option>
+                <option value="admin">Admin</option>
+              </select>
+              {errors.category && <span className="error-message">{errors.category}</span>}
             </div>
 
             <div className="form-group">
@@ -270,7 +314,11 @@ const SignUp = () => {
               {errors.terms && <span className="error-message">{errors.terms}</span>}
             </div>
 
-            {errors.submit && <div className="error-alert">{errors.submit}</div>}
+            {errors.submit && (
+              <div className="error-alert">
+                {errors.submit}
+              </div>
+            )}
             
             <button 
               type="submit" 

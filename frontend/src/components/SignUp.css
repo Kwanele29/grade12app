@@ -103,7 +103,8 @@
   font-size: 0.9rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   padding: 0.9rem 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
@@ -113,19 +114,33 @@
   background: #f8f9fa;
 }
 
-.form-group input:focus {
+/* Select dropdown specific styles */
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+  padding-right: 2.5rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: #667eea;
   background: white;
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
-.form-group input.error {
+.form-group input.error,
+.form-group select.error {
   border-color: #ff4d4d;
   background: #fff5f5;
 }
 
-.form-group input:disabled {
+.form-group input:disabled,
+.form-group select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -231,6 +246,29 @@
   margin-bottom: 0.5rem;
 }
 
+/* Success message styles */
+.success-message {
+  background: #4caf50;
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .divider {
   position: relative;
   text-align: center;
@@ -323,6 +361,7 @@
   text-decoration: underline;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
   .signup-container {
     padding: 1rem;
@@ -354,5 +393,9 @@
   .signup-submit-btn,
   .google-signup-btn {
     padding: 0.9rem;
+  }
+  
+  .form-group select {
+    padding: 0.9rem 2.5rem 0.9rem 1rem;
   }
 }
