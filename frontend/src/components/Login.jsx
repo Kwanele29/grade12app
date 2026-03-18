@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import './Login.css';
 import { useNavigate, Link } from 'react-router-dom';
+import './Login.css';
 import cityBg from '../assets/images/city.jpg';
 
 const Login = () => {
@@ -28,21 +28,31 @@ const Login = () => {
       // Redirect based on user role
       redirectBasedOnRole(user.category);
     }
-  }, [navigate]);
+  }, []);
 
   const redirectBasedOnRole = (category) => {
-    switch(category) {
-      case 'student':
+    if (category === 'student') {
+      // Check if student has selected subjects
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
+      if (savedSubjects) {
         navigate('/student-dashboard');
-        break;
-      case 'tutor':
+      } else {
+        navigate('/student/subject-selection');
+      }
+    } else if (category === 'tutor') {
+      // Check if tutor has selected subjects
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const savedSubjects = localStorage.getItem(`tutor_subjects_${userData?.id}`);
+      if (savedSubjects) {
         navigate('/tutor-dashboard');
-        break;
-      case 'admin':
-        navigate('/admin-dashboard');
-        break;
-      default:
-        navigate('/dashboard');
+      } else {
+        navigate('/tutor/subject-selection');
+      }
+    } else if (category === 'admin') {
+      navigate('/admin-dashboard');
+    } else {
+      navigate('/');
     }
   };
 
@@ -84,8 +94,6 @@ const Login = () => {
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
       try {
-        console.log('Sending login request...', formData.email);
-        
         const response = await fetch('http://localhost:8080/api/auth/login', {
           method: 'POST',
           headers: {
@@ -98,7 +106,6 @@ const Login = () => {
         });
 
         const data = await response.json();
-        console.log('Login response:', data);
 
         if (response.ok) {
           // Store token and user data
@@ -107,7 +114,6 @@ const Login = () => {
           localStorage.setItem('refreshToken', data.refreshToken);
           
           if (rememberMe) {
-            // You can implement remember me functionality here
             localStorage.setItem('rememberedEmail', formData.email);
           }
           
@@ -120,7 +126,7 @@ const Login = () => {
         }
       } catch (error) {
         console.error('Login error:', error);
-        setErrors({ submit: 'Cannot connect to server. Please make sure the backend is running on http://localhost:8080' });
+        setErrors({ submit: 'Network error. Please check your connection.' });
       } finally {
         setIsLoading(false);
       }

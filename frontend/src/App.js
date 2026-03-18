@@ -4,8 +4,8 @@ import Home from './components/Home';
 import SignUp from './components/SignUp';
 import Login from './components/Login';
 import StudentDashboard from './components/student/StudentDashboard';
+import StudentSubjectSelection from './components/student/StudentSubjectSelection';
 import TutorDashboard from './components/tutor/TutorDashboard';
-import TutorSubjectSelection from './components/tutor/TutorSubjectSelection'; // Import the new component
 import AdminDashboard from './components/admin/AdminDashboard';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
@@ -27,15 +27,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       // Redirect to appropriate dashboard based on role
       switch(user.category) {
         case 'student':
-          return <Navigate to="/student-dashboard" replace />;
-        case 'tutor':
-          // For tutors, check if they have selected subjects
-          const savedSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
-          if (savedSubjects) {
-            return <Navigate to="/tutor-dashboard" replace />;
+          const studentSubjects = localStorage.getItem(`student_subjects_${user.id}`);
+          if (studentSubjects) {
+            return <Navigate to="/student-dashboard" replace />;
           } else {
-            return <Navigate to="/tutor/subject-selection" replace />;
+            return <Navigate to="/student/subject-selection" replace />;
           }
+        case 'tutor':
+          // Tutors go directly to dashboard without subject selection
+          return <Navigate to="/tutor-dashboard" replace />;
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -60,15 +60,15 @@ const PublicRoute = ({ children }) => {
       const user = JSON.parse(userJson);
       switch(user.category) {
         case 'student':
-          return <Navigate to="/student-dashboard" replace />;
-        case 'tutor':
-          // For tutors, check if they have selected subjects
-          const savedSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
-          if (savedSubjects) {
-            return <Navigate to="/tutor-dashboard" replace />;
+          const studentSubjects = localStorage.getItem(`student_subjects_${user.id}`);
+          if (studentSubjects) {
+            return <Navigate to="/student-dashboard" replace />;
           } else {
-            return <Navigate to="/tutor/subject-selection" replace />;
+            return <Navigate to="/student/subject-selection" replace />;
           }
+        case 'tutor':
+          // Tutors go directly to dashboard without subject selection
+          return <Navigate to="/tutor-dashboard" replace />;
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -107,6 +107,12 @@ function App() {
                     } />
                     
                     {/* Student Routes */}
+                    <Route path="/student/subject-selection" element={
+                        <ProtectedRoute allowedRoles={['student']}>
+                            <StudentSubjectSelection />
+                        </ProtectedRoute>
+                    } />
+                    
                     <Route path="/student-dashboard" element={
                         <ProtectedRoute allowedRoles={['student']}>
                             <StudentDashboard />
@@ -125,13 +131,7 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* Tutor Routes - Order matters! Subject selection must come before dashboard */}
-                    <Route path="/tutor/subject-selection" element={
-                        <ProtectedRoute allowedRoles={['tutor']}>
-                            <TutorSubjectSelection />
-                        </ProtectedRoute>
-                    } />
-                    
+                    {/* Tutor Routes - No subject selection, just dashboard */}
                     <Route path="/tutor-dashboard" element={
                         <ProtectedRoute allowedRoles={['tutor']}>
                             <TutorDashboard />

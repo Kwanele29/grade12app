@@ -9,6 +9,7 @@ const StudentDashboard = () => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark';
   });
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
 
   // Sample data
   const [notifications] = useState([
@@ -42,6 +43,14 @@ const StudentDashboard = () => {
     }
     
     setUser(parsedUser);
+
+    // Load selected subjects from localStorage
+    const savedSubjects = localStorage.getItem(`student_subjects_${parsedUser.id}`);
+    if (savedSubjects) {
+      const subjects = JSON.parse(savedSubjects);
+      setSelectedSubjects(subjects);
+      console.log('Student selected subjects:', subjects);
+    }
   }, [navigate]);
 
   useEffect(() => {
@@ -236,6 +245,33 @@ const StudentDashboard = () => {
                 ))}
               </div>
             </div>
+
+            {/* Selected Subjects Summary (optional) */}
+            {selectedSubjects.length > 0 && (
+              <div className="activity-panel" style={{ marginTop: '1rem' }}>
+                <h2>Your Selected Subjects ({selectedSubjects.length})</h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
+                  {selectedSubjects.map(subject => (
+                    <span 
+                      key={subject.id}
+                      style={{
+                        padding: '0.4rem 1rem',
+                        background: subject.bgColor || '#f1f5f9',
+                        color: subject.color || '#3b82f6',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      {subject.icon} {subject.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Notifications Preview */}
             <div className="activity-panel">

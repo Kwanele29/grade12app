@@ -1,0 +1,53 @@
+/* StudentSubjectSelection.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+.subject-selection-wrapper.student-selection {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.selection-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.logout-btn-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn-small:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #ef4444;
+}
+
+.logout-icon {
+  font-size: 1rem;
+}
+
+/* Dark mode support */
+.dark-mode .logout-btn-small {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.dark-mode .logout-btn-small:hover {
+  background: #7f1d1d;
+  border-color: #991b1b;
+  color: #fecaca;
+}
+
+/* Keep the rest of the styles from TutorSubjectSelection.css */
+/* You can import or copy the common styles */

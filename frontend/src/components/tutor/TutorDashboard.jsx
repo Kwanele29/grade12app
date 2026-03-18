@@ -10,6 +10,7 @@ const TutorDashboard = () => {
   const [schedule, setSchedule] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -35,9 +36,6 @@ const TutorDashboard = () => {
         const subjects = JSON.parse(savedSubjects);
         setSelectedSubjects(subjects);
         loadTutorData(parsedUser.id, subjects);
-      } else {
-        // If no subjects selected, redirect back to subject selection
-        navigate('/tutor/subject-selection');
       }
       
     } catch (error) {
@@ -76,34 +74,58 @@ const TutorDashboard = () => {
   };
 
   const handleLogout = () => {
+    // Clear all user data from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
-    navigate('/login');
+    if (user) {
+      localStorage.removeItem(`tutor_subjects_${user.id}`);
+    }
+    // Navigate to home page
+    navigate('/');
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   const navigateTo = (path) => {
     navigate(path);
   };
 
-  const handleEditSubjects = () => {
-    navigate('/tutor/subject-selection');
-  };
-
-  const handleBackToSelection = () => {
-    navigate('/tutor/subject-selection');
-  };
-
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
 
-  if (!user || selectedSubjects.length === 0) {
+  if (!user) {
     return null;
   }
 
   return (
     <div className="tutor-dashboard-pro">
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="logout-modal-overlay">
+          <div className="logout-modal">
+            <div className="logout-modal-icon">🚪</div>
+            <h3>Sign Out</h3>
+            <p>Are you sure you want to sign out?</p>
+            <div className="logout-modal-actions">
+              <button className="logout-modal-cancel" onClick={cancelLogout}>
+                Cancel
+              </button>
+              <button className="logout-modal-confirm" onClick={handleLogout}>
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation */}
       <header className="dashboard-header">
         <div className="header-left">
@@ -112,11 +134,6 @@ const TutorDashboard = () => {
             <span className="logo-text">Grade<span>12</span>Central</span>
           </div>
           <span className="role-indicator tutor">Tutor</span>
-          {/* Back to Selection Button - Added here */}
-          <button className="back-to-selection-btn" onClick={handleBackToSelection} title="Back to Subject Selection">
-            <span className="back-icon">←</span>
-            <span className="back-text">Change Subjects</span>
-          </button>
         </div>
 
         <div className="header-right">
@@ -130,9 +147,6 @@ const TutorDashboard = () => {
                 {subject.icon} {subject.name}
               </span>
             ))}
-            <button className="edit-subjects-indicator" onClick={handleEditSubjects}>
-              ✎ Edit
-            </button>
           </div>
 
           <div className="user-menu">
@@ -143,8 +157,15 @@ const TutorDashboard = () => {
               <span className="user-fullname">{user.firstName} {user.lastName}</span>
               <span className="user-role">Tutor</span>
             </div>
-            <button onClick={handleLogout} className="logout-button" title="Logout">
-              <span className="logout-icon">🚪</span>
+            
+            {/* Sign Out Button - Enhanced */}
+            <button 
+              onClick={confirmLogout} 
+              className="signout-button-enhanced" 
+              title="Sign Out"
+            >
+              <span className="signout-icon">🚪</span>
+              <span className="signout-text">Sign Out</span>
             </button>
           </div>
         </div>
