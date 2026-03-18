@@ -5,6 +5,7 @@ import SignUp from './components/SignUp';
 import Login from './components/Login';
 import StudentDashboard from './components/student/StudentDashboard';
 import TutorDashboard from './components/tutor/TutorDashboard';
+import TutorSubjectSelection from './components/tutor/TutorSubjectSelection'; // Import the new component
 import AdminDashboard from './components/admin/AdminDashboard';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
@@ -28,7 +29,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         case 'student':
           return <Navigate to="/student-dashboard" replace />;
         case 'tutor':
-          return <Navigate to="/tutor-dashboard" replace />;
+          // For tutors, check if they have selected subjects
+          const savedSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
+          if (savedSubjects) {
+            return <Navigate to="/tutor-dashboard" replace />;
+          } else {
+            return <Navigate to="/tutor/subject-selection" replace />;
+          }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -55,7 +62,13 @@ const PublicRoute = ({ children }) => {
         case 'student':
           return <Navigate to="/student-dashboard" replace />;
         case 'tutor':
-          return <Navigate to="/tutor-dashboard" replace />;
+          // For tutors, check if they have selected subjects
+          const savedSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
+          if (savedSubjects) {
+            return <Navigate to="/tutor-dashboard" replace />;
+          } else {
+            return <Navigate to="/tutor/subject-selection" replace />;
+          }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -112,7 +125,13 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* Tutor Routes */}
+                    {/* Tutor Routes - Order matters! Subject selection must come before dashboard */}
+                    <Route path="/tutor/subject-selection" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorSubjectSelection />
+                        </ProtectedRoute>
+                    } />
+                    
                     <Route path="/tutor-dashboard" element={
                         <ProtectedRoute allowedRoles={['tutor']}>
                             <TutorDashboard />
