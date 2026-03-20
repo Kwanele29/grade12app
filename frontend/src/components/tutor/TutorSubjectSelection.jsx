@@ -1,73 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './StudentSubjectSelection.css';
+import './TutorSubjectSelection.css';
 
-const StudentSubjectSelection = () => {
+const TutorSubjectSelection = () => {
   const navigate = useNavigate();
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [saving, setSaving] = useState(false);
-
+  
+  // Complete Grade 12 subjects available for tutoring
   const availableSubjects = [
     { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff', category: 'Core' },
     { id: 2, name: 'Mathematical Literacy', icon: '🧮', color: '#f97316', bgColor: '#fff7ed', category: 'Core' },
     { id: 3, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4', category: 'Core' },
     { id: 4, name: 'Life Sciences', icon: '🧬', color: '#8b5cf6', bgColor: '#f5f3ff', category: 'Core' },
     { id: 5, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fef3c7', category: 'Core' },
-    { id: 6, name: 'Geography', icon: '🌍', color: '#ec4899', bgColor: '#fdf2f8', category: 'Humanities' },
-    { id: 7, name: 'History', icon: '📜', color: '#a855f7', bgColor: '#f3e8ff', category: 'Humanities' },
-    { id: 8, name: 'Accounting', icon: '💰', color: '#14b8a6', bgColor: '#e0f2fe', category: 'Commerce' },
-    { id: 9, name: 'Business Studies', icon: '💼', color: '#f43f5e', bgColor: '#fce7f3', category: 'Commerce' },
-    { id: 10, name: 'Tourism', icon: '✈️', color: '#06b6d4', bgColor: '#e0f2fe', category: 'Consumer' },
+    { id: 6, name: 'Afrikaans', icon: '🇿🇦', color: '#f97316', bgColor: '#fff7ed', category: 'Languages' },
+    { id: 7, name: 'isiZulu', icon: '🦓', color: '#14b8a6', bgColor: '#e0f2fe', category: 'Languages' },
+    { id: 8, name: 'isiXhosa', icon: '🌅', color: '#8b5cf6', bgColor: '#f3e8ff', category: 'Languages' },
+    { id: 9, name: 'Geography', icon: '🌍', color: '#ec4899', bgColor: '#fdf2f8', category: 'Humanities' },
+    { id: 10, name: 'History', icon: '📜', color: '#a855f7', bgColor: '#f3e8ff', category: 'Humanities' },
+    { id: 11, name: 'Accounting', icon: '💰', color: '#14b8a6', bgColor: '#e0f2fe', category: 'Commerce' },
+    { id: 12, name: 'Business Studies', icon: '💼', color: '#f43f5e', bgColor: '#fce7f3', category: 'Commerce' },
+    { id: 13, name: 'Economics', icon: '📊', color: '#f59e0b', bgColor: '#fef3c7', category: 'Commerce' },
+    { id: 14, name: 'Computer Applications Technology', icon: '💻', color: '#3b82f6', bgColor: '#eff6ff', category: 'Tech' },
+    { id: 15, name: 'Information Technology', icon: '👨‍💻', color: '#8b5cf6', bgColor: '#f5f3ff', category: 'Tech' },
+    { id: 16, name: 'Tourism', icon: '✈️', color: '#06b6d4', bgColor: '#e0f2fe', category: 'Consumer' },
   ];
 
   useEffect(() => {
+    // Get user data from localStorage
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
+    console.log('TutorSubjectSelection - Checking user:', userData);
+    
     if (!userData || !token) {
+      console.log('No user data or token, redirecting to login');
       navigate('/login');
       return;
     }
     
     try {
       const parsedUser = JSON.parse(userData);
-      if (parsedUser.category !== 'student') {
+      console.log('Parsed user:', parsedUser);
+      
+      if (parsedUser.category !== 'tutor') {
+        console.log('User is not a tutor, redirecting to login');
         navigate('/login');
         return;
       }
       
       setUser(parsedUser);
       
-      // Check if student already has subjects
-      fetchStudentSubjects(parsedUser.id, token);
+      // IMPORTANT: Check if tutor has ALREADY selected subjects
+      const savedSubjects = localStorage.getItem(`tutor_subjects_${parsedUser.id}`);
+      console.log('Saved subjects check:', savedSubjects);
+      
+      // Only redirect if they have NON-EMPTY subjects
+      if (savedSubjects && savedSubjects !== '[]' && savedSubjects !== 'null' && savedSubjects !== 'undefined') {
+        console.log('Tutor already has subjects, redirecting to dashboard');
+        navigate('/tutor-dashboard');
+        return;
+      }
+      
+      console.log('First time tutor or no subjects saved, showing selection page');
+      setLoading(false);
+      
     } catch (error) {
       console.error('Error parsing user data:', error);
       navigate('/login');
-    } finally {
-      setLoading(false);
     }
   }, [navigate]);
-
-  const fetchStudentSubjects = async (studentId, token) => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/student/subjects/${studentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const existingSubjects = await response.json();
-        if (existingSubjects && existingSubjects.length > 0) {
-          // Student already has subjects, redirect to dashboard
-          navigate('/student-dashboard');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching student subjects:', error);
-    }
-  };
 
   const handleSubjectToggle = (subject) => {
     setSelectedSubjects(prev => {
@@ -80,48 +85,35 @@ const StudentSubjectSelection = () => {
     });
   };
 
-  const handleConfirmSubjects = async () => {
+  const handleConfirmSubjects = () => {
     if (selectedSubjects.length === 0) {
-      alert('Please select at least one subject');
+      alert('Please select at least one subject you specialize in');
       return;
     }
 
-    setSaving(true);
-
-    try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('http://localhost:8080/api/student/subjects', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentId: user.id,
-          subjectIds: selectedSubjects.map(s => s.id)
-        })
-      });
-      
-      if (response.ok) {
-        localStorage.setItem(`student_subjects_${user.id}`, JSON.stringify(selectedSubjects));
-        navigate('/student-dashboard');
-      } else {
-        const error = await response.text();
-        alert('Failed to save subjects: ' + error);
-      }
-    } catch (error) {
-      console.error('Error saving subjects:', error);
-      alert('Error saving subjects');
-    } finally {
-      setSaving(false);
-    }
+    console.log('Saving subjects for tutor:', user.id, selectedSubjects);
+    
+    // Save selected subjects to localStorage
+    const subjectsString = JSON.stringify(selectedSubjects);
+    localStorage.setItem(`tutor_subjects_${user.id}`, subjectsString);
+    
+    // Verify it was saved
+    const check = localStorage.getItem(`tutor_subjects_${user.id}`);
+    console.log('Verified saved subjects:', check);
+    
+    // Navigate to the tutor dashboard
+    console.log('Redirecting to tutor dashboard');
+    navigate('/tutor-dashboard');
   };
 
   const handleSkip = () => {
-    navigate('/student-dashboard');
+    console.log('Tutor skipped subject selection');
+    // Save empty array so they won't be asked again
+    localStorage.setItem(`tutor_subjects_${user.id}`, JSON.stringify([]));
+    navigate('/tutor-dashboard');
   };
 
+  // Group subjects by category
   const groupedSubjects = availableSubjects.reduce((acc, subject) => {
     if (!acc[subject.category]) {
       acc[subject.category] = [];
@@ -130,23 +122,32 @@ const StudentSubjectSelection = () => {
     return acc;
   }, {});
 
+  // Filter subjects based on search
   const filteredSubjects = searchTerm
     ? availableSubjects.filter(subject => 
         subject.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : availableSubjects;
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) {
+    return <div className="tutor-subject-loading">Loading...</div>;
+  }
 
   return (
-    <div className="student-subject-selection">
+    <div className="tutor-subject-selection">
       <div className="selection-container">
+        {/* Header */}
         <div className="selection-header">
-          <div className="header-icon">👨‍🎓</div>
-          <h1>Welcome, {user?.firstName || 'Student'}!</h1>
-          <p>Select the subjects you'll be studying</p>
+          <div className="header-icon">👨‍🏫</div>
+          <h1>Welcome, {user?.firstName || 'Tutor'}!</h1>
+          <p className="header-subtitle">Let's set up your tutoring profile</p>
+          <p className="header-description">
+            Select the subjects you specialize in. This will help students find you 
+            and personalize your tutoring experience.
+          </p>
         </div>
 
+        {/* Search Bar */}
         <div className="search-section">
           <div className="search-box">
             <span className="search-icon">🔍</span>
@@ -164,8 +165,10 @@ const StudentSubjectSelection = () => {
           </div>
         </div>
 
+        {/* Subjects Grid */}
         <div className="subjects-scroll-container">
           {searchTerm ? (
+            // Search Results
             <div className="search-results">
               <h3>Search Results ({filteredSubjects.length})</h3>
               <div className="subjects-grid">
@@ -183,6 +186,7 @@ const StudentSubjectSelection = () => {
                       </div>
                       <div className="subject-info">
                         <h4>{subject.name}</h4>
+                        <span className="subject-category">{subject.category}</span>
                       </div>
                       {isSelected && (
                         <div className="selected-check" style={{ backgroundColor: subject.color }}>
@@ -195,6 +199,7 @@ const StudentSubjectSelection = () => {
               </div>
             </div>
           ) : (
+            // Grouped by Category
             Object.keys(groupedSubjects).sort().map(category => (
               <div key={category} className="category-section">
                 <h3 className="category-title">{category}</h3>
@@ -213,6 +218,7 @@ const StudentSubjectSelection = () => {
                         </div>
                         <div className="subject-info">
                           <h4>{subject.name}</h4>
+                          <span className="subject-category">{subject.category}</span>
                         </div>
                         {isSelected && (
                           <div className="selected-check" style={{ backgroundColor: subject.color }}>
@@ -228,21 +234,30 @@ const StudentSubjectSelection = () => {
           )}
         </div>
 
+        {/* Footer with Action Buttons */}
         <div className="selection-footer">
-          <button className="skip-btn" onClick={handleSkip}>
-            Skip for now
-          </button>
-          <button 
-            className={`continue-btn ${selectedSubjects.length === 0 ? 'disabled' : ''}`}
-            onClick={handleConfirmSubjects}
-            disabled={selectedSubjects.length === 0 || saving}
-          >
-            {saving ? 'Saving...' : 'Continue to Dashboard →'}
-          </button>
+          <div className="footer-left">
+            <button className="skip-btn" onClick={handleSkip}>
+              Skip for now
+            </button>
+          </div>
+          <div className="footer-right">
+            <button 
+              className={`continue-btn ${selectedSubjects.length === 0 ? 'disabled' : ''}`}
+              onClick={handleConfirmSubjects}
+              disabled={selectedSubjects.length === 0}
+            >
+              <span>Continue to Dashboard</span>
+              <span className="continue-arrow">→</span>
+            </button>
+            <p className="helper-text">
+              You can always add more subjects later
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default StudentSubjectSelection;
+export default TutorSubjectSelection;

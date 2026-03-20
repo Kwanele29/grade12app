@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Table(name = "questions")
 @Data
 @NoArgsConstructor
-public class Question {
+public class QuizQuestion {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,5 +38,5 @@ public class Question {
     @ManyToOne
     @JoinColumn(name = "quiz_id")
     @JsonIgnore
-    private Quiz quiz;
+    private Quiz quiz;  // Changed from TutorQuiz to Quiz
 }

@@ -22,6 +22,8 @@ public class Subject {
     @Column(name = "icon_url")
     private String iconUrl;
     
+    private String color;  // Add this field for UI
+    
     public Subject(String name, String description) {
         this.name = name;
         this.description = description;

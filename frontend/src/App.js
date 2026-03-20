@@ -6,9 +6,11 @@ import Login from './components/Login';
 import StudentDashboard from './components/student/StudentDashboard';
 import StudentSubjectSelection from './components/student/StudentSubjectSelection';
 import TutorDashboard from './components/tutor/TutorDashboard';
+import TutorSubjectSelection from './components/tutor/TutorSubjectSelection'; // Import TutorSubjectSelection
 import AdminDashboard from './components/admin/AdminDashboard';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
+import TestQuizzes from './components/student/TestQuizzes';
 import './App.css';
 
 // Protected Route component to check authentication and role
@@ -34,8 +36,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
-          // Tutors go directly to dashboard without subject selection
-          return <Navigate to="/tutor-dashboard" replace />;
+          // Check if tutor has selected subjects
+          const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
+          if (tutorSubjects) {
+            return <Navigate to="/tutor-dashboard" replace />;
+          } else {
+            return <Navigate to="/tutor/subject-selection" replace />; // Go to subject selection first
+          }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -67,8 +74,13 @@ const PublicRoute = ({ children }) => {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
-          // Tutors go directly to dashboard without subject selection
-          return <Navigate to="/tutor-dashboard" replace />;
+          // Check if tutor has selected subjects
+          const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
+          if (tutorSubjects) {
+            return <Navigate to="/tutor-dashboard" replace />;
+          } else {
+            return <Navigate to="/tutor/subject-selection" replace />; // Go to subject selection first
+          }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -131,7 +143,13 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* Tutor Routes - No subject selection, just dashboard */}
+                    {/* Tutor Routes */}
+                    <Route path="/tutor/subject-selection" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorSubjectSelection />
+                        </ProtectedRoute>
+                    } />
+                    
                     <Route path="/tutor-dashboard" element={
                         <ProtectedRoute allowedRoles={['tutor']}>
                             <TutorDashboard />
@@ -144,6 +162,9 @@ function App() {
                             <AdminDashboard />
                         </ProtectedRoute>
                     } />
+                    
+                    {/* Test Route */}
+                    <Route path="/test-quizzes" element={<TestQuizzes />} />
                     
                     {/* Catch all - redirect to home */}
                     <Route path="*" element={<Navigate to="/" replace />} />

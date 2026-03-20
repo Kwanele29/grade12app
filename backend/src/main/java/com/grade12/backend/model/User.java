@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.time.LocalDateTime; // THIS IMPORT IS MISSING!
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -40,6 +42,10 @@ public class User {
     private boolean emailVerified = false;
     
     private String category;
+    
+    @OneToMany(mappedBy = "tutor")
+    @JsonIgnore
+    private List<Quiz> quizzes;  // Changed from TutorQuiz to Quiz
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
