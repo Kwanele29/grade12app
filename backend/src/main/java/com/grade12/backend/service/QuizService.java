@@ -1,5 +1,7 @@
 package com.grade12.backend.service;
 
+import java.util.Map;
+import java.util.HashMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grade12.backend.dto.*;
 import com.grade12.backend.model.*;
@@ -23,10 +25,15 @@ public class QuizService {
     private final StudentSubjectRepository studentSubjectRepository;
     private final ObjectMapper objectMapper;
     
+    // Upload quiz with tutor email (from authentication)
     @Transactional
-    public Quiz uploadQuiz(Long tutorId, QuizUploadDTO uploadDTO) {
-        User tutor = userRepository.findById(tutorId)
-            .orElseThrow(() -> new RuntimeException("Tutor not found with ID: " + tutorId));
+    public Quiz uploadQuiz(String tutorEmail, QuizUploadDTO uploadDTO) {
+        User tutor = userRepository.findByEmail(tutorEmail)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with email: " + tutorEmail));
+        
+        if (!"tutor".equalsIgnoreCase(tutor.getCategory())) {
+            throw new RuntimeException("User is not a tutor. Category: " + tutor.getCategory());
+        }
         
         Subject subject = subjectRepository.findById(uploadDTO.getSubjectId())
             .orElseThrow(() -> new RuntimeException("Subject not found with ID: " + uploadDTO.getSubjectId()));
@@ -60,23 +67,90 @@ public class QuizService {
             .collect(Collectors.toList());
         
         quiz.setQuestions(questions);
-        
         Quiz savedQuiz = quizRepository.save(quiz);
         System.out.println("Quiz saved with ID: " + savedQuiz.getId());
         
         return savedQuiz;
     }
     
+    // Upload quiz with tutor ID (legacy method for backward compatibility)
+    @Transactional
+    public Quiz uploadQuiz(Long tutorId, QuizUploadDTO uploadDTO) {
+        User tutor = userRepository.findById(tutorId)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with ID: " + tutorId));
+        return uploadQuiz(tutor.getEmail(), uploadDTO);
+    }
+    
+    // Get quizzes by tutor email (from authentication)
+    public List<Quiz> getQuizzesByTutorEmail(String tutorEmail) {
+        User tutor = userRepository.findByEmail(tutorEmail)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with email: " + tutorEmail));
+        
+        List<Quiz> quizzes = quizRepository.findByTutor(tutor);
+        System.out.println("Found " + quizzes.size() + " quizzes for tutor: " + tutorEmail);
+        return quizzes;
+    }
+    
+    // Get quizzes by tutor ID (legacy method)
     public List<Quiz> getQuizzesByTutor(Long tutorId) {
         User tutor = userRepository.findById(tutorId)
             .orElseThrow(() -> new RuntimeException("Tutor not found with ID: " + tutorId));
         
         List<Quiz> quizzes = quizRepository.findByTutor(tutor);
         System.out.println("Found " + quizzes.size() + " quizzes for tutor ID: " + tutorId);
-        
         return quizzes;
     }
     
+    // Get students by tutor email (from authentication)
+    public List<StudentWithSubjectDTO> getStudentsByTutorEmail(String tutorEmail) {
+        User tutor = userRepository.findByEmail(tutorEmail)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with email: " + tutorEmail));
+        
+        System.out.println("Getting students for tutor email: " + tutorEmail);
+        return getStudentsByTutor(tutor.getId());
+    }
+    
+    // Get students by tutor ID
+    public List<StudentWithSubjectDTO> getStudentsByTutor(Long tutorId) {
+        User tutor = userRepository.findById(tutorId)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with ID: " + tutorId));
+        
+        System.out.println("=== Getting students for tutor ID: " + tutorId);
+        System.out.println("Tutor: " + tutor.getEmail());
+        
+        // Get ALL student-subject relationships
+        List<StudentSubject> allStudentSubjects = studentSubjectRepository.findAll();
+        System.out.println("Total student-subject relationships in database: " + allStudentSubjects.size());
+        
+        List<StudentWithSubjectDTO> result = new ArrayList<>();
+        
+        for (StudentSubject ss : allStudentSubjects) {
+            try {
+                StudentWithSubjectDTO dto = new StudentWithSubjectDTO();
+                dto.setStudentId(ss.getStudent().getId());
+                dto.setStudentName(ss.getStudent().getFirstName() + " " + ss.getStudent().getLastName());
+                dto.setStudentEmail(ss.getStudent().getEmail());
+                dto.setSubjectId(ss.getSubject().getId());
+                dto.setSubjectName(ss.getSubject().getName());
+                dto.setSubjectIcon(ss.getSubject().getIconUrl() != null ? ss.getSubject().getIconUrl() : "📚");
+                dto.setSubjectColor(ss.getSubject().getColor() != null ? ss.getSubject().getColor() : "#3b82f6");
+                dto.setProgress(ss.getProgress() != null ? ss.getProgress() : 0);
+                dto.setGrade(ss.getGrade() != null ? ss.getGrade() : "N/A");
+                dto.setLastActive(ss.getUpdatedAt() != null ? ss.getUpdatedAt().toString() : 
+                                 (ss.getCreatedAt() != null ? ss.getCreatedAt().toString() : "Recently"));
+                
+                result.add(dto);
+                System.out.println("  Added: " + ss.getStudent().getEmail() + " - " + ss.getSubject().getName());
+            } catch (Exception e) {
+                System.err.println("Error processing student-subject: " + e.getMessage());
+            }
+        }
+        
+        System.out.println("Total students found: " + result.size());
+        return result;
+    }
+    
+    // Get all quizzes for students
     public List<QuizResponseDTO> getAllQuizzesForStudents() {
         List<Quiz> quizzes = quizRepository.findAll();
         System.out.println("Total quizzes in database: " + quizzes.size());
@@ -84,8 +158,10 @@ public class QuizService {
         return quizzes.stream()
             .map(quiz -> {
                 String subjectName = quiz.getSubject() != null ? quiz.getSubject().getName() : "General";
-                String subjectIcon = quiz.getSubject() != null ? quiz.getSubject().getIconUrl() : "📚";
-                String subjectColor = quiz.getSubject() != null ? quiz.getSubject().getColor() : "#3b82f6";
+                String subjectIcon = quiz.getSubject() != null && quiz.getSubject().getIconUrl() != null ? 
+                    quiz.getSubject().getIconUrl() : "📚";
+                String subjectColor = quiz.getSubject() != null && quiz.getSubject().getColor() != null ? 
+                    quiz.getSubject().getColor() : "#3b82f6";
                 String tutorName = quiz.getTutor() != null ? 
                     quiz.getTutor().getFirstName() + " " + quiz.getTutor().getLastName() : "Unknown Tutor";
                 
@@ -111,19 +187,20 @@ public class QuizService {
                             .optionD(q.getOptionD())
                             .marks(q.getMarks())
                             .build())
-                        .collect(Collectors.toList()) : List.of())
+                        .collect(Collectors.toList()) : new ArrayList<>())
                     .build();
             })
             .collect(Collectors.toList());
     }
     
+    // Submit quiz and calculate results
     @Transactional
     public QuizResultDTO submitQuiz(QuizSubmissionDTO submission) {
         User student = userRepository.findById(submission.getStudentId())
-            .orElseThrow(() -> new RuntimeException("Student not found"));
+            .orElseThrow(() -> new RuntimeException("Student not found with ID: " + submission.getStudentId()));
         
         Quiz quiz = quizRepository.findById(submission.getQuizId())
-            .orElseThrow(() -> new RuntimeException("Quiz not found"));
+            .orElseThrow(() -> new RuntimeException("Quiz not found with ID: " + submission.getQuizId()));
         
         List<QuizQuestion> questions = questionRepository.findByQuizId(quiz.getId());
         
@@ -157,55 +234,133 @@ public class QuizService {
             .build();
     }
     
+    // Get all quizzes (debugging)
     public List<Quiz> getAllQuizzes() {
         List<Quiz> quizzes = quizRepository.findAll();
         System.out.println("Debug - All quizzes in database: " + quizzes.size());
+        for (Quiz quiz : quizzes) {
+            System.out.println("  Quiz ID: " + quiz.getId() + 
+                             ", Title: " + quiz.getTitle() + 
+                             ", Tutor: " + (quiz.getTutor() != null ? quiz.getTutor().getEmail() : "null") +
+                             ", Subject: " + (quiz.getSubject() != null ? quiz.getSubject().getName() : "null"));
+        }
         return quizzes;
     }
-
-    // UPDATED: This method now shows students for ALL subjects (not just ones with quizzes)
-    public List<StudentWithSubjectDTO> getStudentsByTutor(Long tutorId) {
-        User tutor = userRepository.findById(tutorId)
-            .orElseThrow(() -> new RuntimeException("Tutor not found"));
-        
-        System.out.println("=== Getting students for tutor ID: " + tutorId);
-        System.out.println("Tutor: " + tutor.getEmail());
-        
-        // Get ALL subjects (for now, until we have tutor-subject mapping)
-        // You can modify this to get subjects the tutor teaches if you have that mapping
-        List<Subject> allSubjects = subjectRepository.findAll();
-        System.out.println("Total subjects in system: " + allSubjects.size());
-        
-        List<StudentWithSubjectDTO> result = new ArrayList<>();
-        
-        for (Subject subject : allSubjects) {
-            List<StudentSubject> studentSubjects = studentSubjectRepository.findBySubject(subject);
-            System.out.println("Subject: " + subject.getName() + " - Students enrolled: " + studentSubjects.size());
-            
-            for (StudentSubject ss : studentSubjects) {
-                StudentWithSubjectDTO dto = new StudentWithSubjectDTO();
-                dto.setStudentId(ss.getStudent().getId());
-                dto.setStudentName(ss.getStudent().getFirstName() + " " + ss.getStudent().getLastName());
-                dto.setStudentEmail(ss.getStudent().getEmail());
-                dto.setSubjectId(subject.getId());
-                dto.setSubjectName(subject.getName());
-                dto.setSubjectIcon(subject.getIconUrl());
-                dto.setSubjectColor(subject.getColor());
-                dto.setProgress(ss.getProgress() != null ? ss.getProgress() : 0);
-                dto.setGrade(ss.getGrade() != null ? ss.getGrade() : "N/A");
-                dto.setLastActive(ss.getUpdatedAt() != null ? ss.getUpdatedAt().toString() : 
-                                 (ss.getCreatedAt() != null ? ss.getCreatedAt().toString() : "Recently"));
-                
-                result.add(dto);
-            }
+    
+    // Get all student-subject relationships (debugging)
+    public List<StudentSubject> getAllStudentSubjects() {
+        List<StudentSubject> all = studentSubjectRepository.findAll();
+        System.out.println("Total student-subject relationships: " + all.size());
+        for (StudentSubject ss : all) {
+            System.out.println("  Student: " + (ss.getStudent() != null ? ss.getStudent().getEmail() : "null") + 
+                             ", Subject: " + (ss.getSubject() != null ? ss.getSubject().getName() : "null"));
         }
-        
-        System.out.println("Total students found: " + result.size());
-        return result;
+        return all;
     }
     
-    // New method to get all student-subject relationships for debugging
-    public List<StudentSubject> getAllStudentSubjects() {
-        return studentSubjectRepository.findAll();
+    // Get quizzes by subject
+    public List<Quiz> getQuizzesBySubject(Long subjectId) {
+        List<Quiz> quizzes = quizRepository.findBySubjectId(subjectId);
+        System.out.println("Found " + quizzes.size() + " quizzes for subject ID: " + subjectId);
+        return quizzes;
+    }
+    
+    // Get quiz details with questions
+    public Quiz getQuizWithQuestions(Long quizId) {
+        Quiz quiz = quizRepository.findById(quizId)
+            .orElseThrow(() -> new RuntimeException("Quiz not found with ID: " + quizId));
+        
+        if (quiz.getQuestions() != null) {
+            quiz.getQuestions().size();
+        }
+        
+        return quiz;
+    }
+    
+    // Delete quiz
+    @Transactional
+    public void deleteQuiz(String tutorEmail, Long quizId) {
+        User tutor = userRepository.findByEmail(tutorEmail)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with email: " + tutorEmail));
+        
+        Quiz quiz = quizRepository.findById(quizId)
+            .orElseThrow(() -> new RuntimeException("Quiz not found with ID: " + quizId));
+        
+        if (!quiz.getTutor().getId().equals(tutor.getId())) {
+            throw new RuntimeException("You don't have permission to delete this quiz");
+        }
+        
+        quizRepository.delete(quiz);
+        System.out.println("Quiz deleted: " + quizId + " by tutor: " + tutorEmail);
+    }
+    
+    // Update quiz
+    @Transactional
+    public Quiz updateQuiz(String tutorEmail, Long quizId, QuizUploadDTO updateDTO) {
+        User tutor = userRepository.findByEmail(tutorEmail)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with email: " + tutorEmail));
+        
+        Quiz existingQuiz = quizRepository.findById(quizId)
+            .orElseThrow(() -> new RuntimeException("Quiz not found with ID: " + quizId));
+        
+        if (!existingQuiz.getTutor().getId().equals(tutor.getId())) {
+            throw new RuntimeException("You don't have permission to update this quiz");
+        }
+        
+        existingQuiz.setTitle(updateDTO.getTitle());
+        existingQuiz.setDescription(updateDTO.getDescription());
+        existingQuiz.setTimeLimitMinutes(updateDTO.getTimeLimitMinutes());
+        existingQuiz.setDifficulty(updateDTO.getDifficulty());
+        
+        if (updateDTO.getQuestions() != null && !updateDTO.getQuestions().isEmpty()) {
+            List<QuizQuestion> oldQuestions = questionRepository.findByQuizId(quizId);
+            questionRepository.deleteAll(oldQuestions);
+            
+            List<QuizQuestion> newQuestions = updateDTO.getQuestions().stream()
+                .map(qDTO -> {
+                    QuizQuestion question = new QuizQuestion();
+                    question.setQuestion(qDTO.getQuestion());
+                    question.setOptionA(qDTO.getOptionA());
+                    question.setOptionB(qDTO.getOptionB());
+                    question.setOptionC(qDTO.getOptionC());
+                    question.setOptionD(qDTO.getOptionD());
+                    question.setCorrectOption(qDTO.getCorrectOption());
+                    question.setMarks(qDTO.getMarks());
+                    question.setQuiz(existingQuiz);
+                    return question;
+                })
+                .collect(Collectors.toList());
+            
+            existingQuiz.setQuestions(newQuestions);
+            existingQuiz.setTotalQuestions(newQuestions.size());
+            existingQuiz.setTotalMarks(newQuestions.stream().mapToInt(QuizQuestion::getMarks).sum());
+        }
+        
+        Quiz updatedQuiz = quizRepository.save(existingQuiz);
+        System.out.println("Quiz updated: " + quizId + " by tutor: " + tutorEmail);
+        
+        return updatedQuiz;
+    }
+    
+    // Get quiz statistics
+    public Map<String, Object> getQuizStatistics(String tutorEmail, Long quizId) {
+        User tutor = userRepository.findByEmail(tutorEmail)
+            .orElseThrow(() -> new RuntimeException("Tutor not found with email: " + tutorEmail));
+        
+        Quiz quiz = quizRepository.findById(quizId)
+            .orElseThrow(() -> new RuntimeException("Quiz not found with ID: " + quizId));
+        
+        if (!quiz.getTutor().getId().equals(tutor.getId())) {
+            throw new RuntimeException("You don't have permission to view statistics for this quiz");
+        }
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("quizId", quiz.getId());
+        stats.put("quizTitle", quiz.getTitle());
+        stats.put("totalQuestions", quiz.getTotalQuestions());
+        stats.put("totalMarks", quiz.getTotalMarks());
+        stats.put("message", "Add QuizAttempt table to track student attempts");
+        
+        return stats;
     }
 }

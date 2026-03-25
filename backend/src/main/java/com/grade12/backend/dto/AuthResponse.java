@@ -1,6 +1,6 @@
-package com.grade12.backend.dto;  // Make sure this is correct
+package com.grade12.backend.dto;
 
-import com.grade12.backend.model.User;  // Change from com.example to com.grade12
+import com.grade12.backend.model.User;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 public class AuthResponse {
     private String token;
     private String refreshToken;
-    private User user;  // This should now work
+    private User user;
     private String message;
     
     public AuthResponse(String token, String refreshToken, User user) {

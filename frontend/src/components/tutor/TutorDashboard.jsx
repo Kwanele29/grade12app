@@ -2,6 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TutorDashboard.css';
 
+// API utility functions
+const API_BASE_URL = 'http://localhost:8080/api';
+
+const getAuthToken = () => localStorage.getItem('token');
+
+const authFetch = async (endpoint, options = {}) => {
+  const token = getAuthToken();
+  
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const config = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  };
+  
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'API request failed');
+  }
+  
+  return response.json();
+};
+
 const TutorDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -14,11 +48,16 @@ const TutorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [debugInfo, setDebugInfo] = useState('');
 
+  // Quiz form state
   const [quizForm, setQuizForm] = useState({
     title: '',
     description: '',
@@ -60,10 +99,13 @@ const TutorDashboard = () => {
       if (savedSubjects) {
         const subjects = JSON.parse(savedSubjects);
         setSelectedSubjects(subjects);
+      } else {
+        // If no subjects selected, redirect to subject selection
+        navigate('/tutor/subject-selection');
       }
       
-      fetchStudentsBySubjects(parsedUser.id, token);
-      fetchTutorQuizzes(parsedUser.id, token);
+      // Fetch dashboard data
+      fetchDashboardData();
       loadMockSchedule(parsedUser, savedSubjects ? JSON.parse(savedSubjects) : []);
       
     } catch (error) {
@@ -74,100 +116,178 @@ const TutorDashboard = () => {
     }
   }, [navigate]);
 
-  const fetchStudentsBySubjects = async (tutorId, token) => {
+  const fetchDashboardData = async () => {
     try {
-      setDebugInfo('Fetching students...');
-      const response = await fetch(`http://localhost:8080/api/quizzes/tutor/${tutorId}/students`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      setDebugInfo('Fetching dashboard data...');
+      
+      // Fetch students and quizzes in parallel
+      const [studentsData, quizzesData] = await Promise.all([
+        fetchMyStudents(),
+        fetchMyQuizzes()
+      ]);
+      
+      setStudents(studentsData);
+      setQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
+      
+      // Calculate subject statistics
+      const stats = {};
+      studentsData.forEach(student => {
+        const key = student.subjectId;
+        if (!stats[key]) {
+          stats[key] = {
+            subjectId: student.subjectId,
+            subjectName: student.subjectName,
+            subjectIcon: student.subjectIcon,
+            subjectColor: student.subjectColor,
+            count: 0
+          };
+        }
+        stats[key].count++;
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Students fetched:', data);
-        setStudents(data);
-        
-        const stats = {};
-        data.forEach(student => {
-          const key = student.subjectId;
-          if (!stats[key]) {
-            stats[key] = {
-              subjectId: student.subjectId,
-              subjectName: student.subjectName,
-              subjectIcon: student.subjectIcon,
-              subjectColor: student.subjectColor,
-              count: 0
-            };
-          }
-          stats[key].count++;
-        });
-        
-        setSubjectStats(Object.values(stats));
-        
-        if (data.length === 0) {
-          setDebugInfo('No students found. Make sure students have registered and selected subjects.');
-        } else {
-          setDebugInfo(`Found ${data.length} students`);
-        }
-      } else {
-        const errorText = await response.text();
-        setDebugInfo(`Failed to fetch students: ${errorText}`);
-      }
+      setSubjectStats(Object.values(stats));
+      setDebugInfo(`Found ${studentsData.length} students and ${quizzesData.length} quizzes`);
+      
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error('Error fetching dashboard data:', error);
       setDebugInfo(`Error: ${error.message}`);
+      
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+      }
     }
   };
 
-  const fetchTutorQuizzes = async (tutorId, token) => {
+  const fetchMyStudents = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/quizzes/tutor/${tutorId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setQuizzes(Array.isArray(data) ? data : []);
-      }
+      const data = await authFetch('/quizzes/tutor/students');
+      console.log('Students fetched:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      throw error;
+    }
+  };
+
+  const fetchMyQuizzes = async () => {
+    try {
+      const data = await authFetch('/quizzes/tutor/quizzes');
+      console.log('Quizzes fetched:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching quizzes:', error);
+      throw error;
     }
   };
 
   const loadMockSchedule = (user, subjects) => {
     if (subjects.length > 0) {
       const mockSchedule = [
-        { id: 1, time: '09:00 - 10:30', subject: subjects[0]?.name || 'Mathematics', type: 'Group Session', students: '8 students', color: subjects[0]?.color || '#3b82f6' },
-        { id: 2, time: '11:00 - 12:30', subject: subjects[1]?.name || 'Physical Science', type: '1-on-1', students: 'Lerato Ndlovu', color: subjects[1]?.color || '#10b981' },
+        { 
+          id: 1, 
+          time: '09:00 - 10:30', 
+          subject: subjects[0]?.name || 'Mathematics', 
+          type: 'Group Session', 
+          students: '8 students', 
+          color: subjects[0]?.color || '#3b82f6',
+          date: 'Today',
+          sessionId: 'sess_001',
+          meetingLink: 'https://meet.google.com/abc-defg-hij',
+          topic: 'Calculus Review: Derivatives',
+          attendees: ['Thabo M.', 'Sipho D.', '+6 more']
+        },
+        { 
+          id: 2, 
+          time: '11:00 - 12:30', 
+          subject: subjects[1]?.name || 'Physical Science', 
+          type: '1-on-1', 
+          students: 'Lerato Ndlovu', 
+          color: subjects[1]?.color || '#10b981',
+          date: 'Today',
+          sessionId: 'sess_002',
+          meetingLink: 'https://meet.google.com/xyz-abcd-efg',
+          topic: 'Chemical Bonding',
+          attendees: ['Lerato N.']
+        },
+        { 
+          id: 3, 
+          time: '14:00 - 15:30', 
+          subject: subjects[2]?.name || 'English', 
+          type: 'Essay Review', 
+          students: '5 students', 
+          color: subjects[2]?.color || '#f59e0b',
+          date: 'Tomorrow',
+          sessionId: 'sess_003',
+          meetingLink: 'https://meet.google.com/lmn-opqr-stu',
+          topic: 'Poetry Analysis',
+          attendees: ['Nomsa Z.', '+4 more']
+        }
       ].filter(item => item.subject);
       setSchedule(mockSchedule);
     }
   };
 
-  // Debug function to check all student-subject relationships
   const checkAllStudentSubjects = async () => {
-    const token = localStorage.getItem('token');
     try {
       setDebugInfo('Checking database...');
-      const response = await fetch('http://localhost:8080/api/quizzes/debug/student-subjects', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('All student-subject relationships:', data);
-        alert(`Found ${data.length} student-subject relationships. Check console for details.`);
-        setDebugInfo(`Found ${data.length} student-subject entries`);
-        
-        // Refresh students list
-        if (user) {
-          fetchStudentsBySubjects(user.id, token);
-        }
-      } else {
-        alert('Failed to fetch data');
-      }
+      const data = await authFetch('/quizzes/debug/student-subjects');
+      console.log('All student-subject relationships:', data);
+      alert(`Found ${data.length} student-subject relationships. Check console for details.`);
+      setDebugInfo(`Found ${data.length} student-subject entries`);
+      
+      // Refresh students list
+      await fetchDashboardData();
     } catch (error) {
       console.error('Error:', error);
       alert('Error: ' + error.message);
     }
+  };
+
+  const debugAuthInfo = async () => {
+    try {
+      const data = await authFetch('/quizzes/debug/auth-info');
+      console.log('Auth Info:', data);
+      alert(JSON.stringify(data, null, 2));
+      setDebugInfo(`Auth: ${data.email}, Category: ${data.tutorCategory}`);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error: ' + error.message);
+    }
+  };
+
+  // Button handlers
+  const handleViewStudent = (student) => {
+    setSelectedStudent(student);
+    setShowStudentModal(true);
+  };
+
+  const handleJoinSession = (session) => {
+    setSelectedSession(session);
+    setShowJoinModal(true);
+  };
+
+  const handleStartMeeting = () => {
+    if (selectedSession?.meetingLink) {
+      window.open(selectedSession.meetingLink, '_blank');
+    }
+    setShowJoinModal(false);
+  };
+
+  const handleSendMessage = (student) => {
+    alert(`📱 Opening chat with ${student.studentName}\n\nThis feature will be available soon!`);
+  };
+
+  const handleScheduleMeeting = (student) => {
+    alert(`📅 Schedule a session with ${student.studentName}\n\nThis feature will be available soon!`);
+  };
+
+  const handleViewProgress = (student) => {
+    alert(`📊 Viewing detailed progress for ${student.studentName}\n\nThis feature will be available soon!`);
   };
 
   const handleLogout = () => {
@@ -180,6 +300,15 @@ const TutorDashboard = () => {
   const confirmLogout = () => setShowLogoutConfirm(true);
   const cancelLogout = () => setShowLogoutConfirm(false);
 
+  // Edit subjects button handler
+  const handleChangeSubjects = () => {
+    if (user && window.confirm('Changing subjects will reset your dashboard data. Continue?')) {
+      localStorage.removeItem(`tutor_subjects_${user.id}`);
+      navigate('/tutor/subject-selection');
+    }
+  };
+
+  // Quiz functions
   const handleQuizFormChange = (e) => {
     const { name, value } = e.target;
     setQuizForm(prev => ({ ...prev, [name]: value }));
@@ -228,8 +357,6 @@ const TutorDashboard = () => {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
-      
       const quizData = {
         title: quizForm.title,
         description: quizForm.description,
@@ -247,43 +374,44 @@ const TutorDashboard = () => {
         }))
       };
 
-      const response = await fetch('http://localhost:8080/api/quizzes/upload', {
+      await authFetch('/quizzes/upload', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(quizData)
       });
 
-      if (response.ok) {
-        setSuccessMessage('Quiz uploaded successfully!');
-        setShowSuccessMessage(true);
-        setShowQuizModal(false);
-        setQuizForm({
-          title: '',
-          description: '',
-          subjectId: '',
-          timeLimitMinutes: 30,
-          difficulty: 'Medium',
-          questions: []
-        });
-        
-        if (user) {
-          await fetchTutorQuizzes(user.id, token);
-        }
-        
-        setTimeout(() => setShowSuccessMessage(false), 3000);
-      } else {
-        const errorText = await response.text();
-        alert('Failed to upload quiz: ' + errorText);
-      }
+      setSuccessMessage('Quiz uploaded successfully!');
+      setShowSuccessMessage(true);
+      setShowQuizModal(false);
+      setQuizForm({
+        title: '',
+        description: '',
+        subjectId: '',
+        timeLimitMinutes: 30,
+        difficulty: 'Medium',
+        questions: []
+      });
+      
+      // Refresh quizzes list
+      await fetchDashboardData();
+      
+      setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (error) {
       console.error('Error:', error);
-      alert('Network error: ' + error.message);
+      alert('Failed to upload quiz: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const groupScheduleByDate = () => {
+    const grouped = {};
+    schedule.forEach(item => {
+      if (!grouped[item.date]) {
+        grouped[item.date] = [];
+      }
+      grouped[item.date].push(item);
+    });
+    return grouped;
   };
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -297,6 +425,141 @@ const TutorDashboard = () => {
         </div>
       )}
 
+      {/* Student Details Modal */}
+      {showStudentModal && selectedStudent && (
+        <div className="modal-overlay">
+          <div className="modal-content student-modal">
+            <div className="modal-header" style={{ borderBottomColor: selectedSubjects.find(s => s.id === selectedStudent.subjectId)?.color || '#48bb78' }}>
+              <h3>Student Profile</h3>
+              <button className="modal-close" onClick={() => setShowStudentModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="student-profile-header">
+                <div 
+                  className="student-profile-avatar"
+                  style={{ 
+                    backgroundColor: `${selectedStudent.subjectColor}20`,
+                    color: selectedStudent.subjectColor
+                  }}
+                >
+                  {selectedStudent.studentName.charAt(0)}
+                </div>
+                <div className="student-profile-info">
+                  <h2>{selectedStudent.studentName}</h2>
+                  <p className="student-profile-email">{selectedStudent.studentEmail}</p>
+                </div>
+                <div className="student-profile-status">
+                  <span className="status-badge active">
+                    Last active: {selectedStudent.lastActive || 'Recently'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="student-details-grid">
+                <div className="detail-card">
+                  <h4>Academic Progress</h4>
+                  <div className="detail-row">
+                    <span className="detail-label">Subject:</span>
+                    <span className="detail-value" style={{ color: selectedStudent.subjectColor }}>
+                      {selectedStudent.subjectName}
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Progress:</span>
+                    <span className="detail-value progress-value">{selectedStudent.progress}%</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Grade:</span>
+                    <span className="detail-value">{selectedStudent.grade || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="upcoming-session">
+                <h4>📅 Next Session</h4>
+                <p>Session will be scheduled soon</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-secondary-btn" onClick={() => handleSendMessage(selectedStudent)}>
+                💬 Send Message
+              </button>
+              <button className="modal-secondary-btn" onClick={() => handleScheduleMeeting(selectedStudent)}>
+                📅 Schedule Session
+              </button>
+              <button className="modal-secondary-btn" onClick={() => handleViewProgress(selectedStudent)}>
+                📊 View Progress
+              </button>
+              <button className="modal-close-btn" onClick={() => setShowStudentModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Join Session Modal */}
+      {showJoinModal && selectedSession && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header" style={{ borderBottomColor: selectedSession.color }}>
+              <h3>Join Session</h3>
+              <button className="modal-close" onClick={() => setShowJoinModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="session-details">
+                <div className="session-detail-item">
+                  <span className="detail-label">Subject:</span>
+                  <span className="detail-value" style={{ color: selectedSession.color }}>
+                    {selectedSession.subject}
+                  </span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Topic:</span>
+                  <span className="detail-value">{selectedSession.topic}</span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Time:</span>
+                  <span className="detail-value">{selectedSession.date}, {selectedSession.time}</span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Type:</span>
+                  <span className="detail-value">{selectedSession.type}</span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Participants:</span>
+                  <span className="detail-value">{selectedSession.attendees?.join(', ')}</span>
+                </div>
+              </div>
+              
+              <div className="meeting-info">
+                <h4>Meeting Information</h4>
+                <p>You'll be redirected to Google Meet to start this session.</p>
+                <div className="meeting-link-box">
+                  <span className="link-label">Meeting Link:</span>
+                  <a href={selectedSession.meetingLink} target="_blank" rel="noopener noreferrer">
+                    {selectedSession.meetingLink}
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowJoinModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="modal-join-btn" 
+                onClick={handleStartMeeting}
+                style={{ backgroundColor: selectedSession.color }}
+              >
+                Start Meeting
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Modal */}
       {showQuizModal && (
         <div className="quiz-modal-overlay">
           <div className="quiz-modal">
@@ -408,6 +671,7 @@ const TutorDashboard = () => {
         </div>
       )}
 
+      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="logout-modal-overlay">
           <div className="logout-modal">
@@ -422,6 +686,7 @@ const TutorDashboard = () => {
         </div>
       )}
 
+      {/* Header */}
       <header className="dashboard-header">
         <div className="header-left">
           <div className="logo-area">
@@ -433,11 +698,24 @@ const TutorDashboard = () => {
         <div className="header-right">
           <div className="subject-indicators">
             {selectedSubjects.map(subject => (
-              <span key={subject.id} className="subject-indicator" style={{ backgroundColor: subject.bgColor, color: subject.color }}>
+              <span 
+                key={subject.id} 
+                className="subject-indicator"
+                style={{ backgroundColor: subject.bgColor, color: subject.color }}
+              >
                 {subject.icon} {subject.name}
               </span>
             ))}
+            <button 
+              onClick={handleChangeSubjects}
+              className="edit-subjects-indicator"
+              title="Change Subjects"
+              type="button"
+            >
+              ✏️ Edit Subjects
+            </button>
           </div>
+
           <div className="user-menu">
             <div className="user-avatar" style={{ backgroundColor: selectedSubjects[0]?.color || '#48bb78' }}>
               {user.firstName[0]}{user.lastName[0]}
@@ -446,39 +724,81 @@ const TutorDashboard = () => {
               <span className="user-fullname">{user.firstName} {user.lastName}</span>
               <span className="user-role">Tutor</span>
             </div>
-            <button onClick={confirmLogout} className="signout-button-enhanced">
-              <span className="signout-icon">🚪</span> <span className="signout-text">Sign Out</span>
+            <button 
+              onClick={confirmLogout} 
+              className="signout-button-enhanced" 
+              title="Sign Out"
+              type="button"
+            >
+              🚪 Sign Out
             </button>
           </div>
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="dashboard-main">
+        {/* Welcome Banner */}
         <div className="welcome-banner">
           <div className="banner-content">
             <h1>Good {new Date().getHours() < 12 ? 'Morning' : 'Afternoon'}, {user.firstName}! 👋</h1>
             <p>Here's what's happening with your {selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''} today.</p>
           </div>
           <div className="banner-stats">
-            <div className="banner-stat"><span className="stat-number">{students.length}</span><span className="stat-label">Students</span></div>
-            <div className="banner-stat"><span className="stat-number">{quizzes.length}</span><span className="stat-label">Quizzes</span></div>
+            <div className="banner-stat">
+              <span className="stat-number">{students.length}</span>
+              <span className="stat-label">Students</span>
+            </div>
+            <div className="banner-stat">
+              <span className="stat-number">{quizzes.length}</span>
+              <span className="stat-label">Quizzes</span>
+            </div>
           </div>
         </div>
 
+        {/* Navigation Tabs */}
         <div className="dashboard-tabs">
-          <button className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
-          <button className={`tab-button ${activeTab === 'students' ? 'active' : ''}`} onClick={() => setActiveTab('students')}>My Students</button>
-          <button className={`tab-button ${activeTab === 'quizzes' ? 'active' : ''}`} onClick={() => setActiveTab('quizzes')}>My Quizzes</button>
+          <button 
+            className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+            type="button"
+          >
+            Overview
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'students' ? 'active' : ''}`}
+            onClick={() => setActiveTab('students')}
+            type="button"
+          >
+            My Students ({students.length})
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'quizzes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('quizzes')}
+            type="button"
+          >
+            My Quizzes ({quizzes.length})
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'schedule' ? 'active' : ''}`}
+            onClick={() => setActiveTab('schedule')}
+            type="button"
+          >
+            Schedule
+          </button>
         </div>
 
+        {/* Tab Content */}
         <div className="tab-content">
           {activeTab === 'overview' && (
             <>
+              {/* Students by Subject Section */}
               <section className="content-section">
                 <h2>Students by Subject</h2>
                 {subjectStats.length === 0 ? (
                   <div className="empty-state small">
                     <p>No students enrolled yet. Students will appear here when they register and select subjects.</p>
+                    <button onClick={checkAllStudentSubjects} className="empty-state-btn-small">Check Database</button>
                   </div>
                 ) : (
                   <div className="subject-stats-grid">
@@ -500,34 +820,58 @@ const TutorDashboard = () => {
                 )}
               </section>
 
+              {/* Quick Actions */}
               <section className="content-section">
                 <h2>Quick Actions</h2>
-                <div className="quick-actions-grid">
-                  <div className="quick-action-card" onClick={() => setShowQuizModal(true)}>
-                    <div className="quick-action-icon" style={{ background: '#667eea20', color: '#667eea' }}>📝</div>
+                <div className="actions-grid">
+                  <button className="action-card" onClick={() => setShowQuizModal(true)} type="button">
+                    <div className="action-icon-wrapper" style={{ backgroundColor: selectedSubjects[0]?.bgColor || '#f0fdf4' }}>
+                      <span style={{ color: selectedSubjects[0]?.color || '#48bb78' }}>📝</span>
+                    </div>
                     <h3>Create Quiz</h3>
-                    <p>Design a new quiz</p>
-                  </div>
-                  <div className="quick-action-card" onClick={() => setActiveTab('students')}>
-                    <div className="quick-action-icon" style={{ background: '#ec489920', color: '#ec4899' }}>👥</div>
+                    <p>Design practice questions</p>
+                  </button>
+
+                  <button className="action-card" onClick={() => setActiveTab('students')} type="button">
+                    <div className="action-icon-wrapper" style={{ backgroundColor: selectedSubjects[1]?.bgColor || '#f0fdf4' }}>
+                      <span style={{ color: selectedSubjects[1]?.color || '#48bb78' }}>👥</span>
+                    </div>
                     <h3>View Students</h3>
                     <p>Check all {students.length} student{students.length !== 1 ? 's' : ''}</p>
-                  </div>
+                  </button>
                 </div>
               </section>
 
+              {/* Today's Schedule Preview */}
               <section className="content-section">
-                <h2>Today's Schedule</h2>
+                <div className="section-header">
+                  <h2>Today's Schedule</h2>
+                  <button className="view-link" onClick={() => setActiveTab('schedule')}>View Full Schedule →</button>
+                </div>
                 <div className="schedule-grid">
-                  {schedule.map(item => (
+                  {schedule.filter(item => item.date === 'Today').map(item => (
                     <div key={item.id} className="schedule-card" style={{ borderLeftColor: item.color }}>
                       <div className="schedule-card-time">{item.time}</div>
                       <div className="schedule-card-content">
                         <h3>{item.subject}</h3>
                         <p>{item.type} • {item.students}</p>
+                        <small className="session-topic">{item.topic}</small>
                       </div>
+                      <button 
+                        className="schedule-card-action" 
+                        style={{ backgroundColor: item.color }}
+                        onClick={() => handleJoinSession(item)}
+                        type="button"
+                      >
+                        Join
+                      </button>
                     </div>
                   ))}
+                  {schedule.filter(item => item.date === 'Today').length === 0 && (
+                    <div className="empty-state">
+                      <p>No sessions scheduled for today</p>
+                    </div>
+                  )}
                 </div>
               </section>
             </>
@@ -561,6 +905,7 @@ const TutorDashboard = () => {
                         <th>Progress</th>
                         <th>Grade</th>
                         <th>Last Active</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -596,6 +941,36 @@ const TutorDashboard = () => {
                             </span>
                           </td>
                           <td>{student.lastActive || 'Recently'}</td>
+                          <td>
+                            <div className="action-buttons-cell">
+                              <button 
+                                className="table-action-btn view-btn" 
+                                style={{ color: student.subjectColor, borderColor: student.subjectColor }}
+                                onClick={() => handleViewStudent(student)}
+                                type="button"
+                              >
+                                View
+                              </button>
+                              <button 
+                                className="table-action-btn message-btn" 
+                                style={{ color: '#3b82f6', borderColor: '#3b82f6' }}
+                                onClick={() => handleSendMessage(student)}
+                                title="Send Message"
+                                type="button"
+                              >
+                                💬
+                              </button>
+                              <button 
+                                className="table-action-btn schedule-btn" 
+                                style={{ color: '#f59e0b', borderColor: '#f59e0b' }}
+                                onClick={() => handleScheduleMeeting(student)}
+                                title="Schedule Session"
+                                type="button"
+                              >
+                                📅
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -650,13 +1025,58 @@ const TutorDashboard = () => {
               )}
             </section>
           )}
+
+          {activeTab === 'schedule' && (
+            <section className="content-section full-width">
+              <h2>Full Schedule</h2>
+              <div className="schedule-container">
+                {Object.entries(groupScheduleByDate()).map(([date, items]) => (
+                  <div key={date} className="schedule-date-group">
+                    <h3 className="date-header">{date}</h3>
+                    <div className="schedule-list">
+                      {items.map(item => (
+                        <div key={item.id} className="schedule-list-item" style={{ borderLeftColor: item.color }}>
+                          <div className="schedule-item-time">{item.time}</div>
+                          <div className="schedule-item-details">
+                            <h4>{item.subject}</h4>
+                            <p className="schedule-item-topic">{item.topic}</p>
+                            <div className="schedule-item-meta">
+                              <span className="schedule-item-type" style={{ backgroundColor: item.color + '20', color: item.color }}>
+                                {item.type}
+                              </span>
+                              <span className="schedule-item-students">👥 {item.students}</span>
+                            </div>
+                          </div>
+                          <button 
+                            className="schedule-item-join"
+                            style={{ backgroundColor: item.color }}
+                            onClick={() => handleJoinSession(item)}
+                            type="button"
+                          >
+                            Join
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
 
+      {/* Debug Panel */}
       <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#1e293b', color: 'white', padding: '10px', borderRadius: '5px', fontSize: '12px', zIndex: 9999, maxWidth: '300px' }}>
         <strong>Debug:</strong> {debugInfo}<br/>
-        <button onClick={checkAllStudentSubjects} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
-          Check Student-Subject Relations
+        <button onClick={debugAuthInfo} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', marginRight: '5px' }}>
+          Check Auth
+        </button>
+        <button onClick={checkAllStudentSubjects} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
+          Check DB
+        </button>
+        <button onClick={() => fetchDashboardData()} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', marginLeft: '5px' }}>
+          Refresh
         </button>
       </div>
     </div>
