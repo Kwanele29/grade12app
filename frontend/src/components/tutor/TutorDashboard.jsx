@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TutorDashboard.css';
+import Chat from '../student/Chat';
 
 // API utility functions
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -56,6 +57,13 @@ const TutorDashboard = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [debugInfo, setDebugInfo] = useState('');
+  
+  // Chat state
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedChatStudent, setSelectedChatStudent] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
+  const [unreadMessagesData, setUnreadMessagesData] = useState([]);
 
   // Quiz form state
   const [quizForm, setQuizForm] = useState({
@@ -100,11 +108,9 @@ const TutorDashboard = () => {
         const subjects = JSON.parse(savedSubjects);
         setSelectedSubjects(subjects);
       } else {
-        // If no subjects selected, redirect to subject selection
         navigate('/tutor/subject-selection');
       }
       
-      // Fetch dashboard data
       fetchDashboardData();
       loadMockSchedule(parsedUser, savedSubjects ? JSON.parse(savedSubjects) : []);
       
@@ -116,6 +122,32 @@ const TutorDashboard = () => {
     }
   }, [navigate]);
 
+  // Poll for unread messages every 10 seconds
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/chat/unread/tutor/${user.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadCount(data.totalUnread || 0);
+        setUnreadMessagesData(data.subjects || []);
+        console.log('Unread messages:', data.totalUnread);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -123,7 +155,6 @@ const TutorDashboard = () => {
       
       setDebugInfo('Fetching dashboard data...');
       
-      // Fetch students and quizzes in parallel
       const [studentsData, quizzesData] = await Promise.all([
         fetchMyStudents(),
         fetchMyQuizzes()
@@ -132,7 +163,6 @@ const TutorDashboard = () => {
       setStudents(studentsData);
       setQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
       
-      // Calculate subject statistics
       const stats = {};
       studentsData.forEach(student => {
         const key = student.subjectId;
@@ -239,8 +269,6 @@ const TutorDashboard = () => {
       console.log('All student-subject relationships:', data);
       alert(`Found ${data.length} student-subject relationships. Check console for details.`);
       setDebugInfo(`Found ${data.length} student-subject entries`);
-      
-      // Refresh students list
       await fetchDashboardData();
     } catch (error) {
       console.error('Error:', error);
@@ -258,6 +286,27 @@ const TutorDashboard = () => {
       console.error('Error:', error);
       alert('Error: ' + error.message);
     }
+  };
+
+  const debugMessages = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/chat/debug/messages', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      console.log('All messages:', data);
+      alert(`Found ${data.length} messages. Check console for details.`);
+    } catch (err) {
+      console.error(err);
+      alert('Error checking messages');
+    }
+  };
+
+  // CHAT FUNCTION - Open chat with student
+  const handleOpenChat = (student) => {
+    setSelectedChatStudent(student);
+    setShowChatModal(true);
+    setTimeout(() => fetchUnreadCount(), 1000);
   };
 
   // Button handlers
@@ -278,8 +327,9 @@ const TutorDashboard = () => {
     setShowJoinModal(false);
   };
 
+  // FIXED: This now opens the chat instead of showing alert
   const handleSendMessage = (student) => {
-    alert(`📱 Opening chat with ${student.studentName}\n\nThis feature will be available soon!`);
+    handleOpenChat(student);
   };
 
   const handleScheduleMeeting = (student) => {
@@ -300,7 +350,6 @@ const TutorDashboard = () => {
   const confirmLogout = () => setShowLogoutConfirm(true);
   const cancelLogout = () => setShowLogoutConfirm(false);
 
-  // Edit subjects button handler
   const handleChangeSubjects = () => {
     if (user && window.confirm('Changing subjects will reset your dashboard data. Continue?')) {
       localStorage.removeItem(`tutor_subjects_${user.id}`);
@@ -391,7 +440,6 @@ const TutorDashboard = () => {
         questions: []
       });
       
-      // Refresh quizzes list
       await fetchDashboardData();
       
       setTimeout(() => setShowSuccessMessage(false), 3000);
@@ -419,6 +467,75 @@ const TutorDashboard = () => {
 
   return (
     <div className="tutor-dashboard-pro">
+      {/* Notification Bell */}
+      <div className="notification-bell-container">
+        <button 
+          className={`notification-bell ${unreadCount > 0 ? 'has-notifications' : ''}`}
+          onClick={() => setShowNotificationPanel(!showNotificationPanel)}
+        >
+          🔔
+          {unreadCount > 0 && (
+            <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+          )}
+        </button>
+        
+        {showNotificationPanel && unreadCount > 0 && (
+          <div className="notification-panel">
+            <div className="notification-panel-header">
+              <h4>Unread Messages ({unreadCount})</h4>
+              <button onClick={() => setShowNotificationPanel(false)}>×</button>
+            </div>
+            <div className="notification-panel-body">
+              {unreadMessagesData.map(subject => {
+                const student = students.find(s => s.subjectId === subject.subjectId);
+                return (
+                  <div key={subject.subjectId} className="notification-item">
+                    <div className="notification-avatar" style={{ backgroundColor: subject.subjectColor + '20', color: subject.subjectColor }}>
+                      {subject.subjectIcon}
+                    </div>
+                    <div className="notification-content">
+                      <div className="notification-student">{subject.subjectName}</div>
+                      <div className="notification-message">
+                        {subject.lastMessage?.message?.substring(0, 50)}...
+                      </div>
+                      <div className="notification-time">{subject.lastMessage?.formattedTime}</div>
+                    </div>
+                    <button 
+                      className="notification-reply-btn"
+                      onClick={() => {
+                        if (student) {
+                          handleOpenChat(student);
+                          setShowNotificationPanel(false);
+                        }
+                      }}
+                    >
+                      Reply
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Chat Modal */}
+      {showChatModal && selectedChatStudent && (
+        <Chat
+          studentId={selectedChatStudent.studentId}
+          tutorId={user.id}
+          subjectId={selectedChatStudent.subjectId}
+          subjectName={selectedChatStudent.subjectName}
+          tutorName={user.firstName + ' ' + user.lastName}
+          studentName={selectedChatStudent.studentName}
+          userRole="tutor"
+          onClose={() => {
+            setShowChatModal(false);
+            fetchUnreadCount();
+          }}
+        />
+      )}
+
       {showSuccessMessage && (
         <div className="success-toast">
           <span className="success-icon">✅</span> {successMessage}
@@ -899,15 +1016,14 @@ const TutorDashboard = () => {
                 <div className="students-table-container">
                   <table className="students-table">
                     <thead>
-                      <tr>
+                      56
                         <th>Student</th>
                         <th>Subject</th>
                         <th>Progress</th>
                         <th>Grade</th>
                         <th>Last Active</th>
                         <th>Actions</th>
-                      </tr>
-                    </thead>
+                      </thead>
                     <tbody>
                       {students.map(student => (
                         <tr key={student.studentId}>
@@ -952,13 +1068,13 @@ const TutorDashboard = () => {
                                 View
                               </button>
                               <button 
-                                className="table-action-btn message-btn" 
-                                style={{ color: '#3b82f6', borderColor: '#3b82f6' }}
+                                className="table-action-btn chat-btn" 
+                                style={{ color: '#667eea', borderColor: '#667eea' }}
                                 onClick={() => handleSendMessage(student)}
-                                title="Send Message"
+                                title="Chat with Student"
                                 type="button"
                               >
-                                💬
+                                💬 Chat
                               </button>
                               <button 
                                 className="table-action-btn schedule-btn" 
@@ -1077,6 +1193,9 @@ const TutorDashboard = () => {
         </button>
         <button onClick={() => fetchDashboardData()} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', marginLeft: '5px' }}>
           Refresh
+        </button>
+        <button onClick={debugMessages} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', marginLeft: '5px' }}>
+          Debug Messages
         </button>
       </div>
     </div>

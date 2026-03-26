@@ -18,21 +18,40 @@ const Login = () => {
     // Check if we have OAuth2 response in URL
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
+    const refreshToken = urlParams.get('refreshToken');
     const userParam = urlParams.get('user');
     
+    console.log('OAuth2 Response - Token:', token);
+    console.log('OAuth2 Response - User Param:', userParam);
+    
     if (token && userParam) {
-      const user = JSON.parse(userParam);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      // Redirect based on user role
-      redirectBasedOnRole(user.category);
+      try {
+        // Decode the URL encoded JSON
+        const decodedUserJson = decodeURIComponent(userParam);
+        console.log('Decoded User JSON:', decodedUserJson);
+        
+        const user = JSON.parse(decodedUserJson);
+        console.log('Parsed User:', user);
+        
+        localStorage.setItem('token', token);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Redirect based on user role
+        redirectBasedOnRole(user.category);
+        
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        console.error('Raw userParam:', userParam);
+        alert('Login failed: Could not process user data');
+      }
     }
   }, []);
 
   const redirectBasedOnRole = (category) => {
     if (category === 'student') {
-      // Check if student has selected subjects
       const userData = JSON.parse(localStorage.getItem('user'));
       const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
       if (savedSubjects) {
@@ -41,7 +60,6 @@ const Login = () => {
         navigate('/student/subject-selection');
       }
     } else if (category === 'tutor') {
-      // Check if tutor has selected subjects
       const userData = JSON.parse(localStorage.getItem('user'));
       const savedSubjects = localStorage.getItem(`tutor_subjects_${userData?.id}`);
       if (savedSubjects) {
@@ -108,7 +126,6 @@ const Login = () => {
         const data = await response.json();
 
         if (response.ok) {
-          // Store token and user data
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('refreshToken', data.refreshToken);
@@ -119,7 +136,6 @@ const Login = () => {
           
           console.log('User role:', data.user.category);
           
-          // Redirect based on user role
           redirectBasedOnRole(data.user.category);
         } else {
           setErrors({ submit: data.message || 'Invalid email or password' });

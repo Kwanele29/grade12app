@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -41,22 +42,43 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
     
+    // For UserDetails
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
     
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtExpiration);
+        return buildToken(extraClaims, userDetails.getUsername(), jwtExpiration);
     }
     
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+        return buildToken(new HashMap<>(), userDetails.getUsername(), refreshExpiration);
     }
     
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
+    // For OAuth2 - generate token from username string
+    public String generateToken(String username) {
+        System.out.println("Generating token for username: " + username);
+        return buildToken(new HashMap<>(), username, jwtExpiration);
+    }
+    
+    public String generateRefreshToken(String username) {
+        System.out.println("Generating refresh token for username: " + username);
+        return buildToken(new HashMap<>(), username, refreshExpiration);
+    }
+    
+    // For Authentication object
+    public String generateToken(Authentication authentication) {
+        return generateToken(authentication.getName());
+    }
+    
+    public String generateRefreshToken(Authentication authentication) {
+        return generateRefreshToken(authentication.getName());
+    }
+    
+    private String buildToken(Map<String, Object> extraClaims, String username, long expiration) {
         return Jwts.builder()
                 .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
+                .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -71,6 +93,15 @@ public class JwtService {
             return isValid;
         } catch (Exception e) {
             System.err.println("Token validation error: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    public boolean isTokenValid(String token, String username) {
+        try {
+            final String extractedUsername = extractUsername(token);
+            return extractedUsername.equals(username) && !isTokenExpired(token);
+        } catch (Exception e) {
             return false;
         }
     }
