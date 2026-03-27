@@ -33,14 +33,26 @@ const Login = () => {
   const redirectBasedOnRole = (category) => {
     if (category === 'student') {
       // Check if student has selected subjects
-      const userData = JSON.parse(localStorage.getItem('user'));
-      const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
-      if (savedSubjects) {
-        navigate('/student-dashboard');
-      } else {
-        navigate('/student/subject-selection');
-      }
-    } else if (category === 'tutor') {
+     // Update the redirectBasedOnRole function in Login.js
+const redirectBasedOnRole = (category) => {
+  if (category === 'student') {
+    // Check if student has selected subjects
+    const userData = JSON.parse(localStorage.getItem('user'));
+    const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
+    if (savedSubjects) {
+      navigate('/student-dashboard');
+    } else {
+      navigate('/student/subject-selection');
+    }
+  } else if (category === 'tutor') {
+    // Always go to subject selection first for tutors
+    navigate('/tutor/subject-selection');
+  } else if (category === 'admin') {
+    navigate('/admin-dashboard');
+  } else {
+    navigate('/');
+  }
+};
       // Check if tutor has selected subjects
       const userData = JSON.parse(localStorage.getItem('user'));
       const savedSubjects = localStorage.getItem(`tutor_subjects_${userData?.id}`);

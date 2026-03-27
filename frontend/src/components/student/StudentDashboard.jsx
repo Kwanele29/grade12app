@@ -150,7 +150,7 @@ const StudentDashboard = () => {
             {/* Welcome Section */}
             <div className="welcome-section-modern">
               <div className="welcome-text">
-                <h1>Welcome back, {user?.firstName}! 👋</h1>
+                <h1>Welcome, {user?.firstName}! 👋</h1>
                 <p>Track your progress and continue your learning journey</p>
               </div>
               <div className="date-badge">

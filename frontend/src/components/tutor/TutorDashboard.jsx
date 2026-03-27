@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './TutorDashboard.css';
 
 const TutorDashboard = () => {
@@ -15,6 +16,47 @@ const TutorDashboard = () => {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  
+  // Schedule Session Modal State
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduledStudent, setScheduledStudent] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [newSession, setNewSession] = useState({
+    title: '',
+    date: '',
+    time: '',
+    duration: '1',
+    subject: '',
+    studentId: null,
+    studentName: ''
+  });
+  
+  // Materials state
+  const [uploading, setUploading] = useState(false);
+  const [materials, setMaterials] = useState([]);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    subjectId: '',
+    subjectName: '',
+    topic: '',
+    tags: '',
+    file: null
+  });
+  const [subjects, setSubjects] = useState([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const API_BASE_URL = 'http://localhost:8080/api';
+
+  // Load sessions from localStorage
+  useEffect(() => {
+    const savedSessions = localStorage.getItem('tutor_sessions');
+    if (savedSessions) {
+      setSessions(JSON.parse(savedSessions));
+    }
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -41,6 +83,7 @@ const TutorDashboard = () => {
         setSelectedSubjects(subjects);
         loadTutorData(parsedUser.id, subjects);
         loadScheduleData(subjects);
+        fetchSubjects();
       } else {
         // If no subjects selected, redirect to subject selection
         navigate('/tutor/subject-selection');
@@ -296,75 +339,181 @@ const TutorDashboard = () => {
         meetingLink: 'https://meet.google.com/lmn-opqr-stu',
         topic: 'Poetry Analysis: "London"',
         attendees: ['Nomsa Z.', 'Priya P.', '+3 more']
-      },
-      { 
-        id: 4, 
-        time: '10:00 - 11:30', 
-        subject: subjects[0]?.name || 'Mathematics', 
-        type: 'Group Session', 
-        students: '12 students', 
-        color: subjects[0]?.color || '#3b82f6',
-        date: 'Tomorrow',
-        sessionId: 'sess_004',
-        meetingLink: 'https://meet.google.com/def-ghij-kln',
-        topic: 'Trigonometry: Identities',
-        attendees: ['Thabo M.', 'Sipho D.', 'Zanele K.', '+9 more']
-      },
-      { 
-        id: 5, 
-        time: '13:00 - 14:30', 
-        subject: subjects[1]?.name || 'Physical Science', 
-        type: 'Group Session', 
-        students: '6 students', 
-        color: subjects[1]?.color || '#10b981',
-        date: 'Tomorrow',
-        sessionId: 'sess_005',
-        meetingLink: 'https://meet.google.com/mno-pqrs-tuv',
-        topic: 'Newton\'s Laws',
-        attendees: ['Kagiso M.', 'Michael V.', '+4 more']
-      },
-      { 
-        id: 6, 
-        time: '15:00 - 16:30', 
-        subject: subjects[2]?.name || 'English', 
-        type: '1-on-1', 
-        students: 'Nomsa Zwane', 
-        color: subjects[2]?.color || '#f59e0b',
-        date: 'Wednesday',
-        sessionId: 'sess_006',
-        meetingLink: 'https://meet.google.com/wxy-zabc-def',
-        topic: 'Essay Feedback',
-        attendees: ['Nomsa Z.']
-      },
-      { 
-        id: 7, 
-        time: '09:00 - 10:30', 
-        subject: subjects[0]?.name || 'Mathematics', 
-        type: 'Group Session', 
-        students: '15 students', 
-        color: subjects[0]?.color || '#3b82f6',
-        date: 'Thursday',
-        sessionId: 'sess_007',
-        meetingLink: 'https://meet.google.com/ghi-jklm-nop',
-        topic: 'Probability',
-        attendees: ['Thabo M.', 'Sipho D.', 'Lerato N.', '+12 more']
-      },
-      { 
-        id: 8, 
-        time: '11:00 - 12:30', 
-        subject: subjects[1]?.name || 'Physical Science', 
-        type: 'Group Session', 
-        students: '10 students', 
-        color: subjects[1]?.color || '#10b981',
-        date: 'Friday',
-        sessionId: 'sess_008',
-        meetingLink: 'https://meet.google.com/qrs-tuvw-xyz',
-        topic: 'Electric Circuits',
-        attendees: ['Kagiso M.', 'Michael V.', '+8 more']
       }
     ].filter(item => item.subject);
 
     setSchedule(allScheduleItems);
+  };
+
+  // Materials functions
+  const fetchMaterials = async (tutorId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/materials/tutor/${tutorId}`);
+      setMaterials(response.data);
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/subjects`);
+      console.log('Subjects API response:', response.data);
+      
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setSubjects(response.data);
+      } else if (response.data && response.data.content && Array.isArray(response.data.content) && response.data.content.length > 0) {
+        setSubjects(response.data.content);
+      } else {
+        console.warn('No subjects from API, using default subjects');
+        setSubjects([
+          { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff' },
+          { id: 2, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4' },
+          { id: 3, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fffbeb' },
+          { id: 4, name: 'Mathematical Literacy', icon: '📊', color: '#8b5cf6', bgColor: '#f5f3ff' },
+          { id: 5, name: 'Life Sciences', icon: '🧬', color: '#ec4899', bgColor: '#fdf2f8' },
+          { id: 6, name: 'Geography', icon: '🌍', color: '#14b8a6', bgColor: '#f0fdfa' },
+          { id: 7, name: 'History', icon: '📜', color: '#f97316', bgColor: '#fff7ed' },
+          { id: 8, name: 'Accounting', icon: '💰', color: '#6b7280', bgColor: '#f3f4f6' },
+          { id: 9, name: 'Business Studies', icon: '💼', color: '#84cc16', bgColor: '#f7fee7' },
+          { id: 10, name: 'Economics', icon: '📈', color: '#06b6d4', bgColor: '#ecfeff' },
+          { id: 11, name: 'Agricultural Sciences', icon: '🌾', color: '#2ecc71', bgColor: '#e8f8f5' },
+          { id: 12, name: 'Tourism', icon: '✈️', color: '#e67e22', bgColor: '#fef5e7' }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      setSubjects([
+        { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff' },
+        { id: 2, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4' },
+        { id: 3, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fffbeb' }
+      ]);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 100 * 1024 * 1024) {
+        setError('File size must be less than 100MB');
+        setTimeout(() => setError(''), 3000);
+        e.target.value = '';
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        file: file
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setUploading(true);
+    setError('');
+    setSuccess('');
+
+    if (!formData.file) {
+      setError('Please select a file to upload');
+      setUploading(false);
+      return;
+    }
+
+    if (!formData.title) {
+      setError('Please enter a title');
+      setUploading(false);
+      return;
+    }
+
+    if (!formData.subjectId && !formData.subjectName) {
+      setError('Please select a subject');
+      setUploading(false);
+      return;
+    }
+
+    const uploadData = new FormData();
+    uploadData.append('file', formData.file);
+    uploadData.append('title', formData.title);
+    uploadData.append('description', formData.description);
+    uploadData.append('subjectId', formData.subjectId);
+    uploadData.append('subjectName', formData.subjectName);
+    uploadData.append('topic', formData.topic);
+    uploadData.append('tags', formData.tags);
+    uploadData.append('tutorId', user.id);
+
+    try {
+      await axios.post(`${API_BASE_URL}/materials/upload`, uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setSuccess('Material uploaded successfully!');
+      setFormData({
+        title: '',
+        description: '',
+        subjectId: '',
+        subjectName: '',
+        topic: '',
+        tags: '',
+        file: null
+      });
+      setShowUploadForm(false);
+      fetchMaterials(user.id);
+      
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.value = '';
+      
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error uploading material:', error);
+      setError(error.response?.data?.error || 'Failed to upload material');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId) => {
+    if (!window.confirm('Are you sure you want to delete this material?')) return;
+
+    try {
+      await axios.delete(`${API_BASE_URL}/materials/${materialId}`);
+      setSuccess('Material deleted successfully');
+      fetchMaterials(user.id);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error deleting material:', error);
+      setError('Failed to delete material');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (type) => {
+    switch (type) {
+      case 'pdf': return '📄';
+      case 'document': return '📝';
+      case 'presentation': return '📊';
+      case 'video': return '🎥';
+      case 'image': return '🖼️';
+      default: return '📎';
+    }
   };
 
   // Button handlers
@@ -385,12 +534,86 @@ const TutorDashboard = () => {
     setShowJoinModal(false);
   };
 
-  const handleSendMessage = (student) => {
-    alert(`📱 Opening chat with ${student.name}\n\nThis feature will be available soon!`);
-  };
+ const handleSendMessage = (student) => {
+  // Navigate to messages page with the selected student
+  navigate('/tutor/messages', { state: { selectedStudent: student } });
+};
 
   const handleScheduleMeeting = (student) => {
-    alert(`📅 Schedule a session with ${student.name}\n\nThis feature will be available soon!`);
+    setScheduledStudent(student);
+    setNewSession({
+      title: `${student.subject} Session - ${student.name}`,
+      date: '',
+      time: '',
+      duration: '1',
+      subject: student.subject,
+      studentId: student.id,
+      studentName: student.name
+    });
+    setShowScheduleModal(true);
+  };
+
+  const handleCreateSession = () => {
+    if (!newSession.date || !newSession.time) {
+      alert('Please select a date and time for the session');
+      return;
+    }
+
+    const session = {
+      id: sessions.length + 1,
+      title: newSession.title,
+      date: newSession.date,
+      time: newSession.time,
+      duration: newSession.duration,
+      subject: newSession.subject,
+      studentId: newSession.studentId,
+      studentName: newSession.studentName,
+      students: newSession.studentId ? 1 : 0,
+      createdAt: new Date().toISOString()
+    };
+    
+    const updatedSessions = [...sessions, session];
+    setSessions(updatedSessions);
+    localStorage.setItem('tutor_sessions', JSON.stringify(updatedSessions));
+    
+    // Calculate end time
+    const [hours, minutes] = session.time.split(':');
+    const totalMinutes = parseInt(hours) * 60 + parseInt(minutes) + (parseFloat(session.duration) * 60);
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+    const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+    
+    // Also add to schedule state
+    const newScheduleItem = {
+      id: session.id,
+      time: `${session.time} - ${endTime}`,
+      subject: session.subject,
+      type: session.studentId ? '1-on-1' : 'Group Session',
+      students: session.studentId ? session.studentName : `${session.students} student${session.students !== 1 ? 's' : ''}`,
+      color: selectedSubjects.find(s => s.name === session.subject)?.color || '#48bb78',
+      date: session.date,
+      sessionId: `sess_${session.id}`,
+      meetingLink: `https://meet.google.com/auto-generated-${session.id}`,
+      topic: session.title,
+      attendees: session.studentId ? [session.studentName] : []
+    };
+    
+    setSchedule(prev => [...prev, newScheduleItem]);
+    
+    // Close modal and reset form
+    setShowScheduleModal(false);
+    setScheduledStudent(null);
+    setNewSession({
+      title: '',
+      date: '',
+      time: '',
+      duration: '1',
+      subject: '',
+      studentId: null,
+      studentName: ''
+    });
+    
+    alert(`✅ Session scheduled successfully!\n\n📚 ${session.title}\n📅 Date: ${session.date}\n⏰ Time: ${session.time}\n👤 Student: ${session.studentName}`);
   };
 
   const handleViewProgress = (student) => {
@@ -416,18 +639,7 @@ const TutorDashboard = () => {
   };
 
   const navigateTo = (path) => {
-    if (path.includes('create-quiz') || path.includes('upload-material') || 
-        path.includes('schedule-session') || path.includes('feedback') ||
-        path.includes('materials')) {
-      alert(`🚧 ${path.split('/').pop()} feature is under development and will be available soon!`);
-    } else {
-      navigate(path);
-    }
-  };
-
-  // Home button handler
-  const handleBackToHome = () => {
-    navigate('/');
+    navigate(path);
   };
 
   // Edit subjects button handler
@@ -436,11 +648,6 @@ const TutorDashboard = () => {
       localStorage.removeItem(`tutor_subjects_${user.id}`);
       navigate('/tutor/subject-selection');
     }
-  };
-  
-  // Upload material handler
-  const handleUploadMaterial = () => {
-    navigate('/tutor/upload-material');
   };
 
   const groupScheduleByDate = () => {
@@ -453,6 +660,13 @@ const TutorDashboard = () => {
     });
     return grouped;
   };
+
+  // Fetch materials when user is loaded and materials tab is active
+  useEffect(() => {
+    if (user && activeTab === 'materials') {
+      fetchMaterials(user.id);
+    }
+  }, [user, activeTab]);
 
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -614,6 +828,130 @@ const TutorDashboard = () => {
         </div>
       )}
 
+      {/* Schedule Session Modal */}
+      {showScheduleModal && scheduledStudent && (
+        <div className="modal-overlay">
+          <div className="modal-content schedule-modal">
+            <div className="modal-header" style={{ borderBottomColor: selectedSubjects.find(s => s.name === scheduledStudent.subject)?.color || '#48bb78' }}>
+              <h3>Schedule Session with {scheduledStudent.name}</h3>
+              <button className="modal-close" onClick={() => setShowScheduleModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="student-info-summary">
+                <div className="summary-avatar" style={{ 
+                  backgroundColor: selectedSubjects.find(s => s.name === scheduledStudent.subject)?.bgColor || '#f0fdf4',
+                  color: selectedSubjects.find(s => s.name === scheduledStudent.subject)?.color || '#48bb78'
+                }}>
+                  {scheduledStudent.avatar}
+                </div>
+                <div className="summary-info">
+                  <h4>{scheduledStudent.name}</h4>
+                  <p>{scheduledStudent.subject}</p>
+                  <span className="student-email">{scheduledStudent.email}</span>
+                </div>
+              </div>
+              
+              <form className="schedule-form" onSubmit={(e) => { e.preventDefault(); handleCreateSession(); }}>
+                <div className="form-group">
+                  <label>Session Title *</label>
+                  <input
+                    type="text"
+                    value={newSession.title}
+                    onChange={(e) => setNewSession({...newSession, title: e.target.value})}
+                    required
+                    placeholder="e.g., Algebra Review Session"
+                  />
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Date *</label>
+                    <input
+                      type="date"
+                      value={newSession.date}
+                      onChange={(e) => setNewSession({...newSession, date: e.target.value})}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Time *</label>
+                    <input
+                      type="time"
+                      value={newSession.time}
+                      onChange={(e) => setNewSession({...newSession, time: e.target.value})}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Duration (hours)</label>
+                    <select
+                      value={newSession.duration}
+                      onChange={(e) => setNewSession({...newSession, duration: e.target.value})}
+                    >
+                      <option value="0.5">30 minutes</option>
+                      <option value="1">1 hour</option>
+                      <option value="1.5">1.5 hours</option>
+                      <option value="2">2 hours</option>
+                      <option value="2.5">2.5 hours</option>
+                      <option value="3">3 hours</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label>Subject</label>
+                  <input
+                    type="text"
+                    value={newSession.subject}
+                    disabled
+                    className="disabled-input"
+                  />
+                </div>
+                
+                <div className="session-details-preview">
+                  <h4>Session Details Preview</h4>
+                  <div className="preview-item">
+                    <span className="preview-label">Student:</span>
+                    <span className="preview-value">{scheduledStudent.name}</span>
+                  </div>
+                  <div className="preview-item">
+                    <span className="preview-label">Email:</span>
+                    <span className="preview-value">{scheduledStudent.email}</span>
+                  </div>
+                  {newSession.date && newSession.time && (
+                    <>
+                      <div className="preview-item">
+                        <span className="preview-label">Date & Time:</span>
+                        <span className="preview-value">{new Date(newSession.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {newSession.time}</span>
+                      </div>
+                      <div className="preview-item">
+                        <span className="preview-label">Duration:</span>
+                        <span className="preview-value">{newSession.duration} hour{newSession.duration !== '1' ? 's' : ''}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowScheduleModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="modal-create-btn" 
+                onClick={handleCreateSession}
+                style={{ backgroundColor: selectedSubjects.find(s => s.name === scheduledStudent.subject)?.color || '#48bb78' }}
+              >
+                Create Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Join Session Modal */}
       {showJoinModal && selectedSession && (
         <div className="modal-overlay">
@@ -702,7 +1040,6 @@ const TutorDashboard = () => {
             <span className="logo-text">Grade<span>12</span>Central</span>
           </div>
           <span className="role-indicator tutor">Tutor</span>
-          
         </div>
 
         <div className="header-right">
@@ -717,7 +1054,6 @@ const TutorDashboard = () => {
               </span>
             ))}
             
-            {/* Edit Subjects Button */}
             <button 
               onClick={handleChangeSubjects}
               className="edit-subjects-indicator"
@@ -737,7 +1073,6 @@ const TutorDashboard = () => {
               <span className="user-role">Tutor</span>
             </div>
             
-            {/* Sign Out Button */}
             <button 
               onClick={confirmLogout} 
               className="signout-button-enhanced" 
@@ -877,7 +1212,7 @@ const TutorDashboard = () => {
               <section className="content-section">
                 <h2>Quick Actions</h2>
                 <div className="actions-grid">
-                  <button className="action-card" onClick={() => navigateTo('/tutor/create-quiz')} type="button">
+                  <button className="action-card" onClick={() => navigateTo('/tutor/quizzes')} type="button">
                     <div className="action-icon-wrapper" style={{ backgroundColor: selectedSubjects[0]?.bgColor || '#f0fdf4' }}>
                       <span style={{ color: selectedSubjects[0]?.color || '#48bb78' }}>📝</span>
                     </div>
@@ -885,7 +1220,14 @@ const TutorDashboard = () => {
                     <p>Design practice questions</p>
                   </button>
 
-                  <button className="action-card" onClick={handleUploadMaterial} type="button">
+                  <button 
+                    className="action-card" 
+                    onClick={() => {
+                      setActiveTab('materials');
+                      setShowUploadForm(true);
+                    }} 
+                    type="button"
+                  >
                     <div className="action-icon-wrapper" style={{ backgroundColor: selectedSubjects[1]?.bgColor || '#f0fdf4' }}>
                       <span style={{ color: selectedSubjects[1]?.color || '#48bb78' }}>📄</span>
                     </div>
@@ -893,7 +1235,13 @@ const TutorDashboard = () => {
                     <p>Share study guides</p>
                   </button>
 
-                  <button className="action-card" onClick={() => navigateTo('/tutor/schedule-session')} type="button">
+                  <button className="action-card" onClick={() => {
+                    if (students.length > 0) {
+                      handleScheduleMeeting(students[0]);
+                    } else {
+                      alert('Please add students first');
+                    }
+                  }} type="button">
                     <div className="action-icon-wrapper" style={{ backgroundColor: selectedSubjects[2]?.bgColor || '#f0fdf4' }}>
                       <span style={{ color: selectedSubjects[2]?.color || '#48bb78' }}>📅</span>
                     </div>
@@ -1032,6 +1380,166 @@ const TutorDashboard = () => {
                 ))}
               </div>
             </section>
+          )}
+
+          {activeTab === 'materials' && (
+            <div className="material-container-inline">
+              {error && <div className="error-message">{error}</div>}
+              {success && <div className="success-message">{success}</div>}
+
+              {showUploadForm && (
+                <div className="upload-form-container">
+                  <div className="upload-form-header">
+                    <h2>Upload New Material</h2>
+                    <button onClick={() => setShowUploadForm(false)} className="close-form-btn">×</button>
+                  </div>
+                  <form onSubmit={handleSubmit} className="upload-form">
+                    <div className="form-group">
+                      <label>Title *</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Enter material title"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows="3"
+                        placeholder="Describe what this material is about"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Subject *</label>
+                        <select
+                          name="subjectId"
+                          value={formData.subjectId}
+                          onChange={(e) => {
+                            const selectedId = e.target.value;
+                            const selectedSubject = subjects.find(s => s.id.toString() === selectedId);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              subjectId: selectedId,
+                              subjectName: selectedSubject?.name || ''
+                            }));
+                          }}
+                          required
+                          className="subject-select"
+                        >
+                          <option value="">Select a subject</option>
+                          {subjects.map(subject => (
+                            <option key={subject.id} value={subject.id}>
+                              {subject.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Topic</label>
+                        <input
+                          type="text"
+                          name="topic"
+                          value={formData.topic}
+                          onChange={handleInputChange}
+                          placeholder="e.g., Algebra, Grammar, etc."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Tags (comma-separated)</label>
+                      <input
+                        type="text"
+                        name="tags"
+                        value={formData.tags}
+                        onChange={handleInputChange}
+                        placeholder="e.g., beginner, advanced, practice"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>File *</label>
+                      <input
+                        type="file"
+                        id="file-input"
+                        name="file"
+                        onChange={handleFileChange}
+                        required
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.jpg,.jpeg,.png"
+                      />
+                      <small>Supported: PDF, DOC, DOCX, PPT, PPTX, MP4, JPG, PNG (Max 100MB)</small>
+                    </div>
+
+                    <button type="submit" className="submit-btn" disabled={uploading}>
+                      {uploading ? 'Uploading...' : 'Upload Material'}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              <div className="materials-list">
+                <div className="materials-header">
+                  <h2>Your Materials ({materials.length})</h2>
+                  {!showUploadForm && (
+                    <button onClick={() => setShowUploadForm(true)} className="upload-new-btn">
+                      + Upload New Material
+                    </button>
+                  )}
+                </div>
+                {materials.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">📚</div>
+                    <p>No materials uploaded yet</p>
+                    <button onClick={() => setShowUploadForm(true)} className="empty-upload-btn">
+                      Upload Your First Material
+                    </button>
+                  </div>
+                ) : (
+                  <div className="materials-grid">
+                    {materials.map(material => (
+                      <div key={material.id} className="material-card-item">
+                        <div className="material-icon">{getFileIcon(material.materialType)}</div>
+                        <div className="material-info">
+                          <h3>{material.title}</h3>
+                          <p>{material.description || 'No description'}</p>
+                          <div className="material-meta">
+                            <span className="material-type-badge">{material.materialType}</span>
+                            <span>{formatFileSize(material.fileSize)}</span>
+                            <span>👁️ {material.views || 0}</span>
+                            <span>⬇️ {material.downloads || 0}</span>
+                          </div>
+                          {material.tags && material.tags.length > 0 && (
+                            <div className="material-tags">
+                              {material.tags.map((tag, idx) => (
+                                <span key={idx} className="tag">#{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="material-actions">
+                            <a href={`http://localhost:8080${material.fileUrl}`} target="_blank" rel="noopener noreferrer" className="view-btn">
+                              View
+                            </a>
+                            <button onClick={() => handleDeleteMaterial(material.id)} className="delete-btn">
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </main>

@@ -4,11 +4,17 @@ import Home from './components/Home';
 import SignUp from './components/SignUp';
 import Login from './components/Login';
 import StudentDashboard from './components/student/StudentDashboard';
+import TutorSubjectSelection from './components/tutor/TutorSubjectSelection';
 import StudentSubjectSelection from './components/student/StudentSubjectSelection';
 import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
+import Material from './components/tutor/Material';
+import TutorSessions from './components/tutor/TutorSessions';
+import TutorQuizzes from './components/tutor/TutorQuizzes';
+import TutorFeedback from './components/tutor/TutorFeedback';
+import TutorMessages from './components/tutor/TutorMessages';
 import './App.css';
 
 // Protected Route component to check authentication and role
@@ -34,8 +40,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
-          // Tutors go directly to dashboard without subject selection
-          return <Navigate to="/tutor-dashboard" replace />;
+          // Check if tutor has selected subjects
+          const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
+          if (tutorSubjects) {
+            return <Navigate to="/tutor-dashboard" replace />;
+          } else {
+            return <Navigate to="/tutor/subject-selection" replace />;
+          }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -67,8 +78,13 @@ const PublicRoute = ({ children }) => {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
-          // Tutors go directly to dashboard without subject selection
-          return <Navigate to="/tutor-dashboard" replace />;
+          // Check if tutor has selected subjects
+          const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
+          if (tutorSubjects) {
+            return <Navigate to="/tutor-dashboard" replace />;
+          } else {
+            return <Navigate to="/tutor/subject-selection" replace />;
+          }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
         default:
@@ -106,7 +122,7 @@ function App() {
                         </PublicRoute>
                     } />
                     
-                    {/* Student Routes */}
+                    {/* ==================== STUDENT ROUTES ==================== */}
                     <Route path="/student/subject-selection" element={
                         <ProtectedRoute allowedRoles={['student']}>
                             <StudentSubjectSelection />
@@ -131,14 +147,71 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* Tutor Routes - No subject selection, just dashboard */}
+                    {/* ==================== TUTOR ROUTES ==================== */}
+                    {/* Tutor Subject Selection - First page after login for new tutors */}
+                    <Route path="/tutor/subject-selection" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorSubjectSelection />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Tutor Dashboard - Only after subjects are selected */}
                     <Route path="/tutor-dashboard" element={
                         <ProtectedRoute allowedRoles={['tutor']}>
                             <TutorDashboard />
                         </ProtectedRoute>
                     } />
                     
-                    {/* Admin Routes */}
+                    {/* Materials Management */}
+                    <Route path="/tutor/materials" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <Material />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Alternative route for upload material (backward compatibility) */}
+                    <Route path="/tutor/upload-material" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <Material />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Sessions Management */}
+                    <Route path="/tutor/sessions" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorSessions />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Quizzes Management */}
+                    <Route path="/tutor/quizzes" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorQuizzes />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Alternative route for quiz (backward compatibility) */}
+                    <Route path="/tutor/quiz" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorQuizzes />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Feedback Management */}
+                    <Route path="/tutor/feedback" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorFeedback />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Messages/Communication */}
+                    <Route path="/tutor/messages" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorMessages />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* ==================== ADMIN ROUTES ==================== */}
                     <Route path="/admin-dashboard" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminDashboard />

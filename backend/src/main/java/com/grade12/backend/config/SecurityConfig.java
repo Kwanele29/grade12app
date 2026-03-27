@@ -1,6 +1,5 @@
 package com.grade12.backend.config;
 
-import com.grade12.backend.security.OAuth2SuccessHandler;
 import com.grade12.backend.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +24,6 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -34,12 +32,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/subjects/**", "/api/materials/**", "/uploads/**").permitAll()
                 .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(oAuth2SuccessHandler)
-                .failureUrl("http://localhost:3000/login?error=true")
             );
 
         return http.build();
