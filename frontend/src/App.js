@@ -3,10 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './components/Home';
 import SignUp from './components/SignUp';
 import Login from './components/Login';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import StudentDashboard from './components/student/StudentDashboard';
 import StudentSubjectSelection from './components/student/StudentSubjectSelection';
+import Subjects from './components/student/Subjects'; // IMPORT THE SUBJECTS COMPONENT
 import TutorDashboard from './components/tutor/TutorDashboard';
-import TutorSubjectSelection from './components/tutor/TutorSubjectSelection'; // Import TutorSubjectSelection
+import TutorSubjectSelection from './components/tutor/TutorSubjectSelection';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
@@ -36,12 +39,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
-          // Check if tutor has selected subjects
           const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
           if (tutorSubjects) {
             return <Navigate to="/tutor-dashboard" replace />;
           } else {
-            return <Navigate to="/tutor/subject-selection" replace />; // Go to subject selection first
+            return <Navigate to="/tutor/subject-selection" replace />;
           }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
@@ -74,12 +76,11 @@ const PublicRoute = ({ children }) => {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
-          // Check if tutor has selected subjects
           const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
           if (tutorSubjects) {
             return <Navigate to="/tutor-dashboard" replace />;
           } else {
-            return <Navigate to="/tutor/subject-selection" replace />; // Go to subject selection first
+            return <Navigate to="/tutor/subject-selection" replace />;
           }
         case 'admin':
           return <Navigate to="/admin-dashboard" replace />;
@@ -118,6 +119,10 @@ function App() {
                         </PublicRoute>
                     } />
                     
+                    {/* Password Reset Routes */}
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password/:token" element={<ResetPassword />} />
+                    
                     {/* Student Routes */}
                     <Route path="/student/subject-selection" element={
                         <ProtectedRoute allowedRoles={['student']}>
@@ -137,9 +142,10 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
+                    {/* FIXED: Subjects route now uses the Subjects component */}
                     <Route path="/subjects" element={
                         <ProtectedRoute allowedRoles={['student']}>
-                            <SubjectManager />
+                            <Subjects />
                         </ProtectedRoute>
                     } />
                     

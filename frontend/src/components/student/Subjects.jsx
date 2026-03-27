@@ -19,17 +19,18 @@ const Subjects = () => {
 
   const token = localStorage.getItem('token');
 
-  // Fetch all subjects with tutors
+  // Fetch all subjects
   useEffect(() => {
-    const fetchSubjectsWithTutors = async () => {
+    const fetchSubjects = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/subjects/with-tutors', {
+        const response = await fetch('http://localhost:8080/api/subjects', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         if (response.ok) {
           const data = await response.json();
+          console.log('Subjects from backend:', data);
           setAllSubjectsData(data);
         }
       } catch (error) {
@@ -37,7 +38,7 @@ const Subjects = () => {
       }
     };
     
-    fetchSubjectsWithTutors();
+    fetchSubjects();
   }, [token]);
 
   // Fetch materials for selected subject
@@ -52,9 +53,7 @@ const Subjects = () => {
   const fetchPapers = async () => {
     try {
       const response = await fetch(`http://localhost:8080/api/materials/papers/${selectedSubject.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
@@ -62,17 +61,14 @@ const Subjects = () => {
       }
     } catch (error) {
       console.error('Error fetching papers:', error);
-      // Fallback to sample data if backend not ready
-      setPapers(getSamplePapers(selectedSubject.id));
+      setPapers([]);
     }
   };
 
   const fetchNotes = async () => {
     try {
       const response = await fetch(`http://localhost:8080/api/materials/notes/${selectedSubject.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
@@ -80,16 +76,14 @@ const Subjects = () => {
       }
     } catch (error) {
       console.error('Error fetching notes:', error);
-      setNotes(getSampleNotes(selectedSubject.id));
+      setNotes([]);
     }
   };
 
   const fetchVideos = async () => {
     try {
       const response = await fetch(`http://localhost:8080/api/materials/videos/${selectedSubject.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
@@ -97,37 +91,8 @@ const Subjects = () => {
       }
     } catch (error) {
       console.error('Error fetching videos:', error);
-      setVideos(getSampleVideos(selectedSubject.id));
+      setVideos([]);
     }
-  };
-
-  // Sample data fallback
-  const getSamplePapers = (subjectId) => {
-    const allPapers = [
-      { id: 1, subjectId: 1, title: 'Mathematics P1 - June 2023', year: '2023', term: 'Term 2', type: 'Exam', size: '2.5 MB' },
-      { id: 2, subjectId: 1, title: 'Mathematics P2 - June 2023', year: '2023', term: 'Term 2', type: 'Exam', size: '2.8 MB' },
-      { id: 3, subjectId: 2, title: 'Mathematical Literacy P1', year: '2023', term: 'Term 2', type: 'Exam', size: '2.3 MB' },
-      { id: 4, subjectId: 3, title: 'Physical Science - Physics P1', year: '2023', term: 'Term 2', type: 'Exam', size: '3.1 MB' },
-    ];
-    return allPapers.filter(p => p.subjectId === subjectId);
-  };
-
-  const getSampleNotes = (subjectId) => {
-    const allNotes = [
-      { id: 1, subjectId: 1, title: 'Calculus - Differentiation Notes', topic: 'Calculus', pages: 12, preview: 'Comprehensive notes on differentiation rules' },
-      { id: 2, subjectId: 1, title: 'Algebra - Quadratic Equations', topic: 'Algebra', pages: 8, preview: 'Step-by-step guide to solving quadratic equations' },
-      { id: 3, subjectId: 2, title: 'Financial Maths Notes', topic: 'Finance', pages: 10, preview: 'Interest, loans, and investments explained' },
-    ];
-    return allNotes.filter(n => n.subjectId === subjectId);
-  };
-
-  const getSampleVideos = (subjectId) => {
-    const allVideos = [
-      { id: 1, subjectId: 1, title: 'Calculus - Derivatives', duration: '25:30', teacher: 'Mr. Smith', views: '1.2K', url: '#' },
-      { id: 2, subjectId: 1, title: 'Algebra - Quadratic Formula', duration: '18:45', teacher: 'Mr. Smith', views: '890', url: '#' },
-      { id: 3, subjectId: 2, title: 'Simple Interest Explained', duration: '15:20', teacher: 'Ms. Johnson', views: '560', url: '#' },
-    ];
-    return allVideos.filter(v => v.subjectId === subjectId);
   };
 
   useEffect(() => {
@@ -146,12 +111,11 @@ const Subjects = () => {
     
     setUser(parsedUser);
 
-    // Load selected subjects from localStorage
     const savedSubjects = localStorage.getItem(`student_subjects_${parsedUser.id}`);
     if (savedSubjects) {
       const subjects = JSON.parse(savedSubjects);
       setSelectedSubjects(subjects);
-      console.log('Student selected subjects:', subjects);
+      console.log('Student selected subjects from localStorage:', subjects);
     }
     
     setLoading(false);
@@ -160,17 +124,42 @@ const Subjects = () => {
   // Get full subject details for selected subjects
   const enrolledSubjects = selectedSubjects.map(selected => {
     const fullDetails = allSubjectsData.find(sub => sub.id === selected.id);
-    return fullDetails || selected;
+    console.log('Looking for subject ID:', selected.id, 'Found details:', fullDetails);
+    
+    if (fullDetails) {
+      return {
+        id: fullDetails.id,
+        name: fullDetails.name,
+        icon: fullDetails.iconUrl || selected.icon || '📚',
+        color: fullDetails.color || selected.color || '#3b82f6',
+        bgColor: fullDetails.bgColor || selected.bgColor || '#eff6ff',
+        tutorName: fullDetails.tutorName || 'Not Assigned',
+        tutorId: fullDetails.tutorId
+      };
+    }
+    return {
+      ...selected,
+      tutorName: selected.tutorName || 'Not Assigned',
+      tutorId: selected.tutorId
+    };
   });
 
   const handleSubjectClick = (subject) => {
-    setSelectedSubject(subject);
+    const fullDetails = allSubjectsData.find(sub => sub.id === subject.id);
+    setSelectedSubject({
+      id: subject.id,
+      name: subject.name,
+      icon: subject.icon,
+      color: subject.color,
+      bgColor: subject.bgColor,
+      tutorName: fullDetails?.tutorName || subject.tutorName || 'Not Assigned',
+      tutorId: fullDetails?.tutorId || subject.tutorId
+    });
     setActiveTab('papers');
     setShowChat(false);
   };
 
   const handleDownload = (item) => {
-    console.log('Downloading:', item.title);
     alert(`Downloading ${item.title}...`);
   };
 
@@ -182,26 +171,21 @@ const Subjects = () => {
     }
   };
 
-  const openChat = () => {
-    setShowChat(true);
-  };
-
-  const closeChat = () => {
-    setShowChat(false);
-  };
+  const openChat = () => setShowChat(true);
+  const closeChat = () => setShowChat(false);
 
   const filteredPapers = papers.filter(p => 
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (p.year && p.year.includes(searchTerm))
   );
 
   const filteredNotes = notes.filter(n => 
-    n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    n.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (n.topic && n.topic.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const filteredVideos = videos.filter(v => 
-    v.title.toLowerCase().includes(searchTerm.toLowerCase())
+    v.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -244,7 +228,7 @@ const Subjects = () => {
                   </div>
                   <div className="subject-details">
                     <h3>{subject.name}</h3>
-                    <span className="subject-tutor">Tutor: {subject.tutorName || 'Not Assigned'}</span>
+                    <span className="subject-tutor">Tutor: {subject.tutorName}</span>
                   </div>
                 </div>
               ))
@@ -262,42 +246,17 @@ const Subjects = () => {
                   </div>
                   <div>
                     <h1>{selectedSubject.name}</h1>
-                    <p>Tutor: {selectedSubject.tutorName || 'Not Assigned'}</p>
+                    <p>Tutor: {selectedSubject.tutorName}</p>
                   </div>
                 </div>
                 <div className="subject-header-actions">
-                  <button 
-                    className={`tab-btn ${activeTab === 'papers' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('papers')}
-                  >
-                    📄 Past Papers
-                  </button>
-                  <button 
-                    className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('notes')}
-                  >
-                    📝 Study Notes
-                  </button>
-                  <button 
-                    className={`tab-btn ${activeTab === 'videos' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('videos')}
-                  >
-                    🎥 Video Lessons
-                  </button>
-                  <button 
-                    className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('chat')}
-                  >
-                    💬 Chat with Tutor
-                  </button>
+                  <button className={`tab-btn ${activeTab === 'papers' ? 'active' : ''}`} onClick={() => setActiveTab('papers')}>📄 Past Papers</button>
+                  <button className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`} onClick={() => setActiveTab('notes')}>📝 Study Notes</button>
+                  <button className={`tab-btn ${activeTab === 'videos' ? 'active' : ''}`} onClick={() => setActiveTab('videos')}>🎥 Video Lessons</button>
+                  <button className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>💬 Chat with Tutor</button>
                 </div>
                 <div className="search-bar">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                  <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
               </div>
 
@@ -318,28 +277,19 @@ const Subjects = () => {
                               {paper.year && <span className="paper-year">{paper.year}</span>}
                               {paper.term && <span className="paper-term">{paper.term}</span>}
                               {paper.type && <span className="paper-type">{paper.type}</span>}
-                              {paper.size && <span className="paper-size">{paper.size}</span>}
                             </div>
                           </div>
-                          <button className="download-btn" onClick={() => handleDownload(paper)}>
-                            Download
-                          </button>
+                          <button className="download-btn" onClick={() => handleDownload(paper)}>Download</button>
                         </div>
                       ))}
                     </div>
-                    {filteredPapers.length === 0 && (
-                      <div className="empty-state">
-                        <span className="empty-icon">📭</span>
-                        <p>No papers found for {selectedSubject.name}</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
                 {activeTab === 'notes' && (
                   <div className="notes-section">
                     <div className="section-header">
-                      <h2>Study Notes & Summaries</h2>
+                      <h2>Study Notes</h2>
                       <span className="item-count">{filteredNotes.length} notes</span>
                     </div>
                     <div className="notes-grid">
@@ -354,25 +304,17 @@ const Subjects = () => {
                             </div>
                             {note.preview && <p className="note-preview">{note.preview}</p>}
                           </div>
-                          <button className="download-btn" onClick={() => handleDownload(note)}>
-                            Download Notes
-                          </button>
+                          <button className="download-btn" onClick={() => handleDownload(note)}>Download</button>
                         </div>
                       ))}
                     </div>
-                    {filteredNotes.length === 0 && (
-                      <div className="empty-state">
-                        <span className="empty-icon">📭</span>
-                        <p>No notes found for {selectedSubject.name}</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
                 {activeTab === 'videos' && (
                   <div className="videos-section">
                     <div className="section-header">
-                      <h2>Video Lessons & Tutorials</h2>
+                      <h2>Video Lessons</h2>
                       <span className="item-count">{filteredVideos.length} videos</span>
                     </div>
                     <div className="videos-grid">
@@ -392,12 +334,6 @@ const Subjects = () => {
                         </div>
                       ))}
                     </div>
-                    {filteredVideos.length === 0 && (
-                      <div className="empty-state">
-                        <span className="empty-icon">🎬</span>
-                        <p>No videos found for {selectedSubject.name}</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -405,12 +341,11 @@ const Subjects = () => {
                   <div className="chat-section">
                     <div className="chat-preview">
                       <div className="chat-preview-icon">💬</div>
-                      <h3>Chat with {selectedSubject.tutorName || 'Your Tutor'}</h3>
+                      <h3>Chat with {selectedSubject.tutorName}</h3>
                       <p>Have questions about {selectedSubject.name}? Chat with your tutor for help!</p>
-                      <p className="chat-info-text">Get instant help, ask questions, and clarify doubts directly with your tutor.</p>
                       <button 
                         className="start-chat-btn" 
-                        onClick={openChat}
+                        onClick={openChat} 
                         disabled={!selectedSubject.tutorId}
                       >
                         {selectedSubject.tutorId ? 'Start Chat' : 'No Tutor Assigned Yet'}
@@ -424,12 +359,7 @@ const Subjects = () => {
             <div className="no-subject-selected">
               <span className="empty-icon">📚</span>
               <h2>Select a Subject</h2>
-              <p>Choose a subject from the left to access past papers, notes, videos, and chat with your tutor.</p>
-              {enrolledSubjects.length === 0 && (
-                <button onClick={() => navigate('/student/subject-selection')} className="select-subjects-btn-large">
-                  Select Your Subjects Now
-                </button>
-              )}
+              <p>Choose a subject from the left to access materials and chat with your tutor.</p>
             </div>
           )}
         </div>
@@ -442,6 +372,8 @@ const Subjects = () => {
           subjectId={selectedSubject.id}
           subjectName={selectedSubject.name}
           tutorName={selectedSubject.tutorName}
+          studentName={user?.firstName + ' ' + user?.lastName}
+          userRole="student"
           onClose={closeChat}
         />
       )}
