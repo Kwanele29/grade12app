@@ -47,6 +47,7 @@ const TutorDashboard = () => {
   const [subjects, setSubjects] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [tutorId, setTutorId] = useState(null);
 
   const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -57,6 +58,209 @@ const TutorDashboard = () => {
       setSessions(JSON.parse(savedSessions));
     }
   }, []);
+
+  // Fetch tutor ID by user ID
+  const fetchTutorId = async (userId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/tutors/user/${userId}`);
+      if (response.data && response.data.id) {
+        setTutorId(response.data.id);
+        return response.data.id;
+      }
+    } catch (error) {
+      console.error('Error fetching tutor ID:', error);
+    }
+    return null;
+  };
+
+  // Load real student data from API
+  const loadTutorData = async (tutorUserId, subjectsList) => {
+    try {
+      setLoading(true);
+      
+      // Get tutor ID first
+      const tutorIdFromApi = await fetchTutorId(tutorUserId);
+      if (!tutorIdFromApi) {
+        console.warn('No tutor record found');
+        setStudents([]);
+        return;
+      }
+      
+      // Fetch students linked to this tutor
+      const studentsResponse = await axios.get(`${API_BASE_URL}/student-tutor/tutor/${tutorIdFromApi}`);
+      
+      if (studentsResponse.data && studentsResponse.data.length > 0) {
+        // Format students from API
+        const formattedStudents = await Promise.all(studentsResponse.data.map(async (studentTutor) => {
+          const student = studentTutor.student;
+          const studentUser = student?.user;
+          
+          return {
+            id: student.id,
+            name: `${studentUser?.firstName || ''} ${studentUser?.lastName || ''}`.trim() || 'Unknown Student',
+            subject: studentTutor.subject?.name || subjectsList[0]?.name || 'General',
+            progress: studentTutor.progress || 0,
+            lastActive: studentTutor.lastActive ? new Date(studentTutor.lastActive).toLocaleDateString() : 'Recently',
+            avatar: studentUser?.firstName && studentUser?.lastName 
+              ? `${studentUser.firstName[0]}${studentUser.lastName[0]}` 
+              : 'ST',
+            email: studentUser?.email || 'No email',
+            phone: student?.phone || 'Not provided',
+            grade: student?.grade || 12,
+            school: student?.school || 'Not specified',
+            joinDate: studentTutor.joinedDate ? new Date(studentTutor.joinedDate).toLocaleDateString() : 'Recently',
+            totalSessions: studentTutor.totalSessions || 0,
+            averageScore: studentTutor.averageScore || 0,
+            completedQuizzes: studentTutor.completedQuizzes || 0,
+            upcomingSession: 'Not scheduled',
+            strengths: studentTutor.strengths ? JSON.parse(studentTutor.strengths) : [],
+            weaknesses: studentTutor.weaknesses ? JSON.parse(studentTutor.weaknesses) : [],
+            recentActivity: studentTutor.recentActivity ? JSON.parse(studentTutor.recentActivity) : []
+          };
+        }));
+        
+        setStudents(formattedStudents);
+      } else {
+        setStudents([]);
+      }
+    } catch (error) {
+      console.error('Error loading tutor data:', error);
+      setError('Failed to load student data');
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load real schedule data from API
+  const loadScheduleData = async (tutorUserId) => {
+    try {
+      const tutorIdFromApi = await fetchTutorId(tutorUserId);
+      if (!tutorIdFromApi) return;
+      
+      const sessionsResponse = await axios.get(`${API_BASE_URL}/sessions/tutor/${tutorIdFromApi}`);
+      
+      if (sessionsResponse.data && sessionsResponse.data.length > 0) {
+        const formattedSessions = sessionsResponse.data.map(session => ({
+          id: session.id,
+          time: session.scheduledTime ? `${new Date(session.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${calculateEndTime(session.scheduledTime, session.duration)}` : 'Time TBD',
+          subject: session.subject?.name || 'General',
+          type: session.type || 'Session',
+          students: session.studentCount ? `${session.studentCount} students` : '0 students',
+          color: '#667eea',
+          date: session.scheduledTime ? new Date(session.scheduledTime).toLocaleDateString() : 'Date TBD',
+          sessionId: session.id,
+          meetingLink: session.meetingLink || '#',
+          topic: session.title || 'Session',
+          attendees: session.attendees || []
+        }));
+        
+        setSchedule(formattedSessions);
+      } else {
+        setSchedule([]);
+      }
+    } catch (error) {
+      console.error('Error loading schedule:', error);
+      setSchedule([]);
+    }
+  };
+
+  const calculateEndTime = (startTime, duration) => {
+    if (!startTime) return '00:00';
+    const start = new Date(startTime);
+    const end = new Date(start.getTime() + (duration || 60) * 60000);
+    return end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Materials functions
+  const fetchMaterials = async (tutorUserId) => {
+    try {
+      const tutorIdFromApi = await fetchTutorId(tutorUserId);
+      if (!tutorIdFromApi) return;
+      
+      const response = await axios.get(`${API_BASE_URL}/materials/tutor/${tutorIdFromApi}`);
+      setMaterials(response.data);
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      setMaterials([]);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/subjects`);
+      
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        const formattedSubjects = response.data.map(subject => ({
+          id: subject.id,
+          name: subject.name,
+          icon: getSubjectIcon(subject.name),
+          color: getSubjectColor(subject.name),
+          bgColor: getSubjectBgColor(subject.name)
+        }));
+        setSubjects(formattedSubjects);
+      } else {
+        setSubjects([]);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      setSubjects([]);
+    }
+  };
+
+  const getSubjectIcon = (name) => {
+    const icons = {
+      'Mathematics': '📐',
+      'Physical Science': '⚛️',
+      'English': '📝',
+      'Mathematical Literacy': '📊',
+      'Life Sciences': '🧬',
+      'Geography': '🌍',
+      'History': '📜',
+      'Accounting': '💰',
+      'Business Studies': '💼',
+      'Economics': '📈',
+      'Agricultural Sciences': '🌾',
+      'Tourism': '✈️'
+    };
+    return icons[name] || '📚';
+  };
+
+  const getSubjectColor = (name) => {
+    const colors = {
+      'Mathematics': '#3b82f6',
+      'Physical Science': '#10b981',
+      'English': '#f59e0b',
+      'Mathematical Literacy': '#8b5cf6',
+      'Life Sciences': '#ec4899',
+      'Geography': '#14b8a6',
+      'History': '#f97316',
+      'Accounting': '#6b7280',
+      'Business Studies': '#84cc16',
+      'Economics': '#06b6d4',
+      'Agricultural Sciences': '#2ecc71',
+      'Tourism': '#e67e22'
+    };
+    return colors[name] || '#667eea';
+  };
+
+  const getSubjectBgColor = (name) => {
+    const colors = {
+      'Mathematics': '#eff6ff',
+      'Physical Science': '#f0fdf4',
+      'English': '#fffbeb',
+      'Mathematical Literacy': '#f5f3ff',
+      'Life Sciences': '#fdf2f8',
+      'Geography': '#f0fdfa',
+      'History': '#fff7ed',
+      'Accounting': '#f3f4f6',
+      'Business Studies': '#f7fee7',
+      'Economics': '#ecfeff',
+      'Agricultural Sciences': '#e8f8f5',
+      'Tourism': '#fef5e7'
+    };
+    return colors[name] || '#f7fafc';
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -79,10 +283,10 @@ const TutorDashboard = () => {
       // Load selected subjects from localStorage
       const savedSubjects = localStorage.getItem(`tutor_subjects_${parsedUser.id}`);
       if (savedSubjects) {
-        const subjects = JSON.parse(savedSubjects);
-        setSelectedSubjects(subjects);
-        loadTutorData(parsedUser.id, subjects);
-        loadScheduleData(subjects);
+        const subjectsList = JSON.parse(savedSubjects);
+        setSelectedSubjects(subjectsList);
+        loadTutorData(parsedUser.id, subjectsList);
+        loadScheduleData(parsedUser.id);
         fetchSubjects();
       } else {
         // If no subjects selected, redirect to subject selection
@@ -96,300 +300,6 @@ const TutorDashboard = () => {
       setLoading(false);
     }
   }, [navigate]);
-
-  const loadTutorData = (tutorId, subjects) => {
-    const allStudents = [
-      { 
-        id: 1, 
-        name: 'Thabo Mokoena', 
-        subject: 'Mathematics', 
-        progress: 75, 
-        lastActive: '2 hours ago', 
-        avatar: 'TM', 
-        email: 'thabo.m@student.com',
-        phone: '+27 71 234 5678',
-        grade: 12,
-        school: 'Parktown Boys High',
-        joinDate: '15 Jan 2024',
-        totalSessions: 12,
-        averageScore: 68,
-        completedQuizzes: 8,
-        upcomingSession: 'Tomorrow, 10:00 AM',
-        strengths: ['Algebra', 'Calculus'],
-        weaknesses: ['Trigonometry', 'Probability'],
-        recentActivity: [
-          { date: '2024-01-20', type: 'Quiz', subject: 'Calculus', score: 82 },
-          { date: '2024-01-18', type: 'Session', subject: 'Algebra', attendance: 'Present' },
-          { date: '2024-01-15', type: 'Quiz', subject: 'Trigonometry', score: 65 }
-        ]
-      },
-      { 
-        id: 2, 
-        name: 'Lerato Ndlovu', 
-        subject: 'Physical Science', 
-        progress: 82, 
-        lastActive: '1 day ago', 
-        avatar: 'LN', 
-        email: 'lerato.n@student.com',
-        phone: '+27 72 345 6789',
-        grade: 12,
-        school: 'Pretoria Girls High',
-        joinDate: '10 Jan 2024',
-        totalSessions: 15,
-        averageScore: 78,
-        completedQuizzes: 10,
-        upcomingSession: 'Today, 11:00 AM',
-        strengths: ['Chemistry', 'Electricity'],
-        weaknesses: ['Organic Chemistry', 'Motion'],
-        recentActivity: [
-          { date: '2024-01-19', type: 'Quiz', subject: 'Chemistry', score: 88 },
-          { date: '2024-01-17', type: 'Session', subject: 'Physics', attendance: 'Present' },
-          { date: '2024-01-14', type: 'Quiz', subject: 'Electricity', score: 72 }
-        ]
-      },
-      { 
-        id: 3, 
-        name: 'Sipho Dlamini', 
-        subject: 'Mathematics', 
-        progress: 68, 
-        lastActive: '3 hours ago', 
-        avatar: 'SD', 
-        email: 'sipho.d@student.com',
-        phone: '+27 73 456 7890',
-        grade: 12,
-        school: 'Durban High School',
-        joinDate: '20 Jan 2024',
-        totalSessions: 8,
-        averageScore: 62,
-        completedQuizzes: 6,
-        upcomingSession: 'Thursday, 2:00 PM',
-        strengths: ['Geometry'],
-        weaknesses: ['Calculus', 'Statistics'],
-        recentActivity: [
-          { date: '2024-01-18', type: 'Quiz', subject: 'Geometry', score: 75 },
-          { date: '2024-01-16', type: 'Session', subject: 'Calculus', attendance: 'Present' },
-          { date: '2024-01-12', type: 'Quiz', subject: 'Statistics', score: 45 }
-        ]
-      },
-      { 
-        id: 4, 
-        name: 'Nomsa Zwane', 
-        subject: 'English', 
-        progress: 90, 
-        lastActive: '5 hours ago', 
-        avatar: 'NZ', 
-        email: 'nomsa.z@student.com',
-        phone: '+27 74 567 8901',
-        grade: 12,
-        school: 'Roedean School',
-        joinDate: '5 Jan 2024',
-        totalSessions: 18,
-        averageScore: 85,
-        completedQuizzes: 15,
-        upcomingSession: 'Wednesday, 3:00 PM',
-        strengths: ['Literature', 'Essay Writing'],
-        weaknesses: ['Poetry Analysis'],
-        recentActivity: [
-          { date: '2024-01-19', type: 'Quiz', subject: 'Literature', score: 92 },
-          { date: '2024-01-16', type: 'Session', subject: 'Essay Writing', attendance: 'Present' },
-          { date: '2024-01-13', type: 'Quiz', subject: 'Poetry', score: 78 }
-        ]
-      },
-      { 
-        id: 5, 
-        name: 'Zanele Khumalo', 
-        subject: 'Mathematical Literacy', 
-        progress: 71, 
-        lastActive: '1 day ago', 
-        avatar: 'ZK', 
-        email: 'zanele.k@student.com',
-        phone: '+27 75 678 9012',
-        grade: 12,
-        school: 'Alexandra High',
-        joinDate: '12 Jan 2024',
-        totalSessions: 10,
-        averageScore: 68,
-        completedQuizzes: 7,
-        upcomingSession: 'Friday, 9:00 AM',
-        strengths: ['Finance', 'Data Handling'],
-        weaknesses: ['Maps & Plans'],
-        recentActivity: [
-          { date: '2024-01-17', type: 'Quiz', subject: 'Finance', score: 78 },
-          { date: '2024-01-15', type: 'Session', subject: 'Data', attendance: 'Present' },
-          { date: '2024-01-10', type: 'Quiz', subject: 'Maps', score: 58 }
-        ]
-      },
-      { 
-        id: 6, 
-        name: 'Kagiso Moeketsi', 
-        subject: 'Life Sciences', 
-        progress: 88, 
-        lastActive: '4 hours ago', 
-        avatar: 'KM', 
-        email: 'kagiso.m@student.com',
-        phone: '+27 76 789 0123',
-        grade: 12,
-        school: 'St Johns College',
-        joinDate: '8 Jan 2024',
-        totalSessions: 14,
-        averageScore: 82,
-        completedQuizzes: 12,
-        upcomingSession: 'Tomorrow, 2:30 PM',
-        strengths: ['Human Biology', 'Genetics'],
-        weaknesses: ['Evolution'],
-        recentActivity: [
-          { date: '2024-01-18', type: 'Quiz', subject: 'Biology', score: 88 },
-          { date: '2024-01-16', type: 'Session', subject: 'Genetics', attendance: 'Present' },
-          { date: '2024-01-11', type: 'Quiz', subject: 'Evolution', score: 70 }
-        ]
-      },
-      { 
-        id: 7, 
-        name: 'Priya Patel', 
-        subject: 'Tourism', 
-        progress: 79, 
-        lastActive: '2 days ago', 
-        avatar: 'PP', 
-        email: 'priya.p@student.com',
-        phone: '+27 77 890 1234',
-        grade: 12,
-        school: 'Lenasia Secondary',
-        joinDate: '18 Jan 2024',
-        totalSessions: 9,
-        averageScore: 74,
-        completedQuizzes: 7,
-        upcomingSession: 'Thursday, 11:00 AM',
-        strengths: ['Tourism Geography', 'Marketing'],
-        weaknesses: ['Sustainable Tourism'],
-        recentActivity: [
-          { date: '2024-01-15', type: 'Quiz', subject: 'Geography', score: 82 },
-          { date: '2024-01-13', type: 'Session', subject: 'Marketing', attendance: 'Present' },
-          { date: '2024-01-08', type: 'Quiz', subject: 'Sustainability', score: 65 }
-        ]
-      },
-      { 
-        id: 8, 
-        name: 'Michael van der Merwe', 
-        subject: 'Geography', 
-        progress: 84, 
-        lastActive: '6 hours ago', 
-        avatar: 'MV', 
-        email: 'michael.v@student.com',
-        phone: '+27 78 901 2345',
-        grade: 12,
-        school: 'Paarl Gimnasium',
-        joinDate: '3 Jan 2024',
-        totalSessions: 16,
-        averageScore: 80,
-        completedQuizzes: 14,
-        upcomingSession: 'Today, 3:30 PM',
-        strengths: ['Climatology', 'Geomorphology'],
-        weaknesses: ['Economic Geography'],
-        recentActivity: [
-          { date: '2024-01-19', type: 'Quiz', subject: 'Climate', score: 88 },
-          { date: '2024-01-17', type: 'Session', subject: 'Geomorphology', attendance: 'Present' },
-          { date: '2024-01-14', type: 'Quiz', subject: 'Economic', score: 72 }
-        ]
-      },
-    ];
-
-    const filteredStudents = allStudents.filter(student => 
-      subjects.some(s => s.name === student.subject)
-    );
-    setStudents(filteredStudents);
-  };
-
-  const loadScheduleData = (subjects) => {
-    const allScheduleItems = [
-      { 
-        id: 1, 
-        time: '09:00 - 10:30', 
-        subject: subjects[0]?.name || 'Mathematics', 
-        type: 'Group Session', 
-        students: '8 students', 
-        color: subjects[0]?.color || '#3b82f6',
-        date: 'Today',
-        sessionId: 'sess_001',
-        meetingLink: 'https://meet.google.com/abc-defg-hij',
-        topic: 'Calculus Review: Derivatives',
-        attendees: ['Thabo M.', 'Sipho D.', 'Lerato N.', '+5 more']
-      },
-      { 
-        id: 2, 
-        time: '11:00 - 12:30', 
-        subject: subjects[1]?.name || 'Physical Science', 
-        type: '1-on-1', 
-        students: 'Lerato Ndlovu', 
-        color: subjects[1]?.color || '#10b981',
-        date: 'Today',
-        sessionId: 'sess_002',
-        meetingLink: 'https://meet.google.com/xyz-abcd-efg',
-        topic: 'Chemical Bonding',
-        attendees: ['Lerato N.']
-      },
-      { 
-        id: 3, 
-        time: '14:00 - 15:30', 
-        subject: subjects[2]?.name || 'English', 
-        type: 'Essay Review', 
-        students: '5 students', 
-        color: subjects[2]?.color || '#f59e0b',
-        date: 'Today',
-        sessionId: 'sess_003',
-        meetingLink: 'https://meet.google.com/lmn-opqr-stu',
-        topic: 'Poetry Analysis: "London"',
-        attendees: ['Nomsa Z.', 'Priya P.', '+3 more']
-      }
-    ].filter(item => item.subject);
-
-    setSchedule(allScheduleItems);
-  };
-
-  // Materials functions
-  const fetchMaterials = async (tutorId) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/materials/tutor/${tutorId}`);
-      setMaterials(response.data);
-    } catch (error) {
-      console.error('Error fetching materials:', error);
-    }
-  };
-
-  const fetchSubjects = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/subjects`);
-      console.log('Subjects API response:', response.data);
-      
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        setSubjects(response.data);
-      } else if (response.data && response.data.content && Array.isArray(response.data.content) && response.data.content.length > 0) {
-        setSubjects(response.data.content);
-      } else {
-        console.warn('No subjects from API, using default subjects');
-        setSubjects([
-          { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff' },
-          { id: 2, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4' },
-          { id: 3, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fffbeb' },
-          { id: 4, name: 'Mathematical Literacy', icon: '📊', color: '#8b5cf6', bgColor: '#f5f3ff' },
-          { id: 5, name: 'Life Sciences', icon: '🧬', color: '#ec4899', bgColor: '#fdf2f8' },
-          { id: 6, name: 'Geography', icon: '🌍', color: '#14b8a6', bgColor: '#f0fdfa' },
-          { id: 7, name: 'History', icon: '📜', color: '#f97316', bgColor: '#fff7ed' },
-          { id: 8, name: 'Accounting', icon: '💰', color: '#6b7280', bgColor: '#f3f4f6' },
-          { id: 9, name: 'Business Studies', icon: '💼', color: '#84cc16', bgColor: '#f7fee7' },
-          { id: 10, name: 'Economics', icon: '📈', color: '#06b6d4', bgColor: '#ecfeff' },
-          { id: 11, name: 'Agricultural Sciences', icon: '🌾', color: '#2ecc71', bgColor: '#e8f8f5' },
-          { id: 12, name: 'Tourism', icon: '✈️', color: '#e67e22', bgColor: '#fef5e7' }
-        ]);
-      }
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
-      setSubjects([
-        { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff' },
-        { id: 2, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4' },
-        { id: 3, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fffbeb' }
-      ]);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -447,7 +357,7 @@ const TutorDashboard = () => {
     uploadData.append('subjectName', formData.subjectName);
     uploadData.append('topic', formData.topic);
     uploadData.append('tags', formData.tags);
-    uploadData.append('tutorId', user.id);
+    uploadData.append('tutorId', tutorId);
 
     try {
       await axios.post(`${API_BASE_URL}/materials/upload`, uploadData, {
@@ -535,7 +445,6 @@ const TutorDashboard = () => {
   };
 
  const handleSendMessage = (student) => {
-  // Navigate to messages page with the selected student
   navigate('/tutor/messages', { state: { selectedStudent: student } });
 };
 
@@ -553,67 +462,84 @@ const TutorDashboard = () => {
     setShowScheduleModal(true);
   };
 
-  const handleCreateSession = () => {
+  const handleCreateSession = async () => {
     if (!newSession.date || !newSession.time) {
       alert('Please select a date and time for the session');
       return;
     }
 
-    const session = {
-      id: sessions.length + 1,
-      title: newSession.title,
-      date: newSession.date,
-      time: newSession.time,
-      duration: newSession.duration,
-      subject: newSession.subject,
-      studentId: newSession.studentId,
-      studentName: newSession.studentName,
-      students: newSession.studentId ? 1 : 0,
-      createdAt: new Date().toISOString()
-    };
+    const sessionDateTime = `${newSession.date}T${newSession.time}:00`;
     
-    const updatedSessions = [...sessions, session];
-    setSessions(updatedSessions);
-    localStorage.setItem('tutor_sessions', JSON.stringify(updatedSessions));
-    
-    // Calculate end time
-    const [hours, minutes] = session.time.split(':');
-    const totalMinutes = parseInt(hours) * 60 + parseInt(minutes) + (parseFloat(session.duration) * 60);
-    const endHours = Math.floor(totalMinutes / 60);
-    const endMinutes = totalMinutes % 60;
-    const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-    
-    // Also add to schedule state
-    const newScheduleItem = {
-      id: session.id,
-      time: `${session.time} - ${endTime}`,
-      subject: session.subject,
-      type: session.studentId ? '1-on-1' : 'Group Session',
-      students: session.studentId ? session.studentName : `${session.students} student${session.students !== 1 ? 's' : ''}`,
-      color: selectedSubjects.find(s => s.name === session.subject)?.color || '#48bb78',
-      date: session.date,
-      sessionId: `sess_${session.id}`,
-      meetingLink: `https://meet.google.com/auto-generated-${session.id}`,
-      topic: session.title,
-      attendees: session.studentId ? [session.studentName] : []
-    };
-    
-    setSchedule(prev => [...prev, newScheduleItem]);
-    
-    // Close modal and reset form
-    setShowScheduleModal(false);
-    setScheduledStudent(null);
-    setNewSession({
-      title: '',
-      date: '',
-      time: '',
-      duration: '1',
-      subject: '',
-      studentId: null,
-      studentName: ''
-    });
-    
-    alert(`✅ Session scheduled successfully!\n\n📚 ${session.title}\n📅 Date: ${session.date}\n⏰ Time: ${session.time}\n👤 Student: ${session.studentName}`);
+    try {
+      const sessionData = {
+        title: newSession.title,
+        scheduledTime: sessionDateTime,
+        duration: parseFloat(newSession.duration) * 60,
+        subject: newSession.subject,
+        tutorId: tutorId,
+        studentId: newSession.studentId,
+        type: '1-on-1'
+      };
+      
+      const response = await axios.post(`${API_BASE_URL}/sessions`, sessionData);
+      
+      const session = response.data;
+      const sessionForState = {
+        id: session.id,
+        title: session.title,
+        date: newSession.date,
+        time: newSession.time,
+        duration: newSession.duration,
+        subject: newSession.subject,
+        studentId: newSession.studentId,
+        studentName: newSession.studentName,
+        students: 1,
+        createdAt: new Date().toISOString()
+      };
+      
+      const updatedSessions = [...sessions, sessionForState];
+      setSessions(updatedSessions);
+      localStorage.setItem('tutor_sessions', JSON.stringify(updatedSessions));
+      
+      const [hours, minutes] = sessionForState.time.split(':');
+      const totalMinutes = parseInt(hours) * 60 + parseInt(minutes) + (parseFloat(sessionForState.duration) * 60);
+      const endHours = Math.floor(totalMinutes / 60);
+      const endMinutes = totalMinutes % 60;
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+      
+      const newScheduleItem = {
+        id: session.id,
+        time: `${sessionForState.time} - ${endTime}`,
+        subject: sessionForState.subject,
+        type: '1-on-1',
+        students: sessionForState.studentName,
+        color: selectedSubjects.find(s => s.name === sessionForState.subject)?.color || '#48bb78',
+        date: sessionForState.date,
+        sessionId: `sess_${session.id}`,
+        meetingLink: session.meetingLink || `https://meet.google.com/auto-generated-${session.id}`,
+        topic: sessionForState.title,
+        attendees: [sessionForState.studentName]
+      };
+      
+      setSchedule(prev => [...prev, newScheduleItem]);
+      
+      setShowScheduleModal(false);
+      setScheduledStudent(null);
+      setNewSession({
+        title: '',
+        date: '',
+        time: '',
+        duration: '1',
+        subject: '',
+        studentId: null,
+        studentName: ''
+      });
+      
+      alert(`✅ Session scheduled successfully!\n\n📚 ${sessionForState.title}\n📅 Date: ${sessionForState.date}\n⏰ Time: ${sessionForState.time}\n👤 Student: ${sessionForState.studentName}`);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      alert('Failed to create session. Please try again.');
+    }
   };
 
   const handleViewProgress = (student) => {
@@ -687,7 +613,6 @@ const TutorDashboard = () => {
               <button className="modal-close" onClick={() => setShowStudentModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              {/* Student Header */}
               <div className="student-profile-header">
                 <div 
                   className="student-profile-avatar"
@@ -710,7 +635,6 @@ const TutorDashboard = () => {
                 </div>
               </div>
 
-              {/* Student Details Grid */}
               <div className="student-details-grid">
                 <div className="detail-card">
                   <h4>Personal Information</h4>
@@ -755,12 +679,11 @@ const TutorDashboard = () => {
                 </div>
               </div>
 
-              {/* Strengths & Weaknesses */}
               <div className="strengths-weaknesses">
                 <div className="strengths-section">
                   <h4>💪 Strengths</h4>
                   <div className="tags">
-                    {selectedStudent.strengths.map((strength, index) => (
+                    {selectedStudent.strengths && selectedStudent.strengths.map((strength, index) => (
                       <span key={index} className="tag strength-tag">{strength}</span>
                     ))}
                   </div>
@@ -768,18 +691,17 @@ const TutorDashboard = () => {
                 <div className="weaknesses-section">
                   <h4>📚 Needs Improvement</h4>
                   <div className="tags">
-                    {selectedStudent.weaknesses.map((weakness, index) => (
+                    {selectedStudent.weaknesses && selectedStudent.weaknesses.map((weakness, index) => (
                       <span key={index} className="tag weakness-tag">{weakness}</span>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Recent Activity */}
               <div className="recent-activity">
                 <h4>Recent Activity</h4>
                 <div className="activity-timeline">
-                  {selectedStudent.recentActivity.map((activity, index) => (
+                  {selectedStudent.recentActivity && selectedStudent.recentActivity.map((activity, index) => (
                     <div key={index} className="activity-item">
                       <div className="activity-date">{activity.date}</div>
                       <div className="activity-details">
@@ -802,7 +724,6 @@ const TutorDashboard = () => {
                 </div>
               </div>
 
-              {/* Next Session */}
               {selectedStudent.upcomingSession && (
                 <div className="upcoming-session">
                   <h4>📅 Upcoming Session</h4>
@@ -1152,7 +1073,7 @@ const TutorDashboard = () => {
                   <button className="view-link" onClick={() => setActiveTab('schedule')}>View Full Schedule →</button>
                 </div>
                 <div className="schedule-grid">
-                  {schedule.filter(item => item.date === 'Today').map(item => (
+                  {schedule.filter(item => item.date === new Date().toLocaleDateString()).map(item => (
                     <div key={item.id} className="schedule-card" style={{ borderLeftColor: item.color }}>
                       <div className="schedule-card-time">{item.time}</div>
                       <div className="schedule-card-content">
@@ -1170,7 +1091,7 @@ const TutorDashboard = () => {
                       </button>
                     </div>
                   ))}
-                  {schedule.filter(item => item.date === 'Today').length === 0 && (
+                  {schedule.filter(item => item.date === new Date().toLocaleDateString()).length === 0 && (
                     <div className="empty-state">
                       <p>No sessions scheduled for today</p>
                     </div>
