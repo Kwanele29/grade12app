@@ -51,18 +51,18 @@ const Login = () => {
   }, []);
 
   const redirectBasedOnRole = (category) => {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    
     if (category === 'student') {
-      const userData = JSON.parse(localStorage.getItem('user'));
       const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
-      if (savedSubjects) {
+      if (savedSubjects && savedSubjects !== '[]' && savedSubjects !== 'null') {
         navigate('/student-dashboard');
       } else {
         navigate('/student/subject-selection');
       }
     } else if (category === 'tutor') {
-      const userData = JSON.parse(localStorage.getItem('user'));
       const savedSubjects = localStorage.getItem(`tutor_subjects_${userData?.id}`);
-      if (savedSubjects) {
+      if (savedSubjects && savedSubjects !== '[]' && savedSubjects !== 'null') {
         navigate('/tutor-dashboard');
       } else {
         navigate('/tutor/subject-selection');

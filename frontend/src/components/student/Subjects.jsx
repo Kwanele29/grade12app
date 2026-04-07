@@ -131,8 +131,8 @@ const Subjects = () => {
         id: fullDetails.id,
         name: fullDetails.name,
         icon: fullDetails.iconUrl || selected.icon || '📚',
-        color: fullDetails.color || selected.color || '#3b82f6',
-        bgColor: fullDetails.bgColor || selected.bgColor || '#eff6ff',
+        color: fullDetails.color || selected.color || '#66FCF1',
+        bgColor: fullDetails.bgColor || selected.bgColor || 'rgba(102, 252, 241, 0.1)',
         tutorName: fullDetails.tutorName || 'Not Assigned',
         tutorId: fullDetails.tutorId
       };

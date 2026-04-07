@@ -150,7 +150,7 @@ const StudentDashboard = () => {
             {/* Welcome Section */}
             <div className="welcome-section-modern">
               <div className="welcome-text">
-                <h1>Welcome back, {user?.firstName}! 👋</h1>
+                <h1>Welcome, {user?.firstName}! 👋</h1>
                 <p>Track your progress and continue your learning journey</p>
               </div>
               <div className="date-badge">
@@ -256,8 +256,8 @@ const StudentDashboard = () => {
                       key={subject.id}
                       style={{
                         padding: '0.4rem 1rem',
-                        background: subject.bgColor || '#f1f5f9',
-                        color: subject.color || '#3b82f6',
+                        background: subject.bgColor || 'rgba(102, 252, 241, 0.1)',
+                        color: subject.color || '#66FCF1',
                         borderRadius: '20px',
                         fontSize: '0.9rem',
                         fontWeight: '500',

@@ -1,0 +1,70 @@
+/* Add to your existing Material.css */
+
+.subject-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.subject-input {
+  flex: 1;
+  margin-bottom: 0 !important;
+}
+
+.dropdown-arrow-btn {
+  padding: 10px 12px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  width: auto;
+  min-width: 36px;
+  transition: all 0.2s;
+}
+
+.dropdown-arrow-btn:hover {
+  background: #e0e0e0;
+  border-color: #bbb;
+}
+
+.dropdown-arrow-btn:active {
+  transform: scale(0.98);
+}
+
+.no-results {
+  color: #999;
+  font-style: italic;
+  cursor: default;
+  text-align: center;
+}
+
+.no-results:hover {
+  background: transparent;
+}
+
+/* Make sure dropdown appears above other elements */
+.dropdown {
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #f0f0f0;
+}

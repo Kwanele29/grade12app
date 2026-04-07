@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './TutorDashboard.css';
 import Chat from '../student/Chat';
 
@@ -58,6 +59,23 @@ const TutorDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [debugInfo, setDebugInfo] = useState('');
   
+  // Materials state (from Boity)
+  const [uploading, setUploading] = useState(false);
+  const [materials, setMaterials] = useState([]);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    subjectId: '',
+    subjectName: '',
+    topic: '',
+    tags: '',
+    file: null
+  });
+  const [subjects, setSubjects] = useState([]);
+  const [error, setError] = useState('');
+  const [materialSuccess, setMaterialSuccess] = useState('');
+  
   // Chat state
   const [showChatModal, setShowChatModal] = useState(false);
   const [selectedChatStudent, setSelectedChatStudent] = useState(null);
@@ -85,6 +103,7 @@ const TutorDashboard = () => {
     marks: 1
   });
 
+  // Load user and subjects
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
@@ -113,6 +132,7 @@ const TutorDashboard = () => {
       
       fetchDashboardData();
       loadMockSchedule(parsedUser, savedSubjects ? JSON.parse(savedSubjects) : []);
+      fetchSubjects();
       
     } catch (error) {
       console.error('Error parsing user data:', error);
@@ -131,6 +151,13 @@ const TutorDashboard = () => {
     }
   }, [user]);
 
+  // Fetch materials when user is loaded and materials tab is active
+  useEffect(() => {
+    if (user && activeTab === 'materials') {
+      fetchMaterials(user.id);
+    }
+  }, [user, activeTab]);
+
   const fetchUnreadCount = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -141,7 +168,6 @@ const TutorDashboard = () => {
         const data = await response.json();
         setUnreadCount(data.totalUnread || 0);
         setUnreadMessagesData(data.subjects || []);
-        console.log('Unread messages:', data.totalUnread);
       }
     } catch (error) {
       console.error('Error fetching unread count:', error);
@@ -212,6 +238,32 @@ const TutorDashboard = () => {
     } catch (error) {
       console.error('Error fetching quizzes:', error);
       throw error;
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/subjects`);
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setSubjects(response.data);
+      } else {
+        setSubjects([
+          { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff' },
+          { id: 2, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4' },
+          { id: 3, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fffbeb' }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+    }
+  };
+
+  const fetchMaterials = async (tutorId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/materials/tutor/${tutorId}`);
+      setMaterials(response.data);
+    } catch (error) {
+      console.error('Error fetching materials:', error);
     }
   };
 
@@ -288,28 +340,17 @@ const TutorDashboard = () => {
     }
   };
 
-  const debugMessages = async () => {
-    try {
-      const response = await fetch('http://localhost:8080/api/chat/debug/messages', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await response.json();
-      console.log('All messages:', data);
-      alert(`Found ${data.length} messages. Check console for details.`);
-    } catch (err) {
-      console.error(err);
-      alert('Error checking messages');
-    }
-  };
-
-  // CHAT FUNCTION - Open chat with student
+  // Chat function - Open chat with student
   const handleOpenChat = (student) => {
     setSelectedChatStudent(student);
     setShowChatModal(true);
     setTimeout(() => fetchUnreadCount(), 1000);
   };
 
-  // Button handlers
+  const handleSendMessage = (student) => {
+    handleOpenChat(student);
+  };
+
   const handleViewStudent = (student) => {
     setSelectedStudent(student);
     setShowStudentModal(true);
@@ -327,11 +368,6 @@ const TutorDashboard = () => {
     setShowJoinModal(false);
   };
 
-  // FIXED: This now opens the chat instead of showing alert
-  const handleSendMessage = (student) => {
-    handleOpenChat(student);
-  };
-
   const handleScheduleMeeting = (student) => {
     alert(`📅 Schedule a session with ${student.studentName}\n\nThis feature will be available soon!`);
   };
@@ -344,6 +380,9 @@ const TutorDashboard = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
+    if (user) {
+      localStorage.removeItem(`tutor_subjects_${user.id}`);
+    }
     navigate('/');
   };
 
@@ -354,6 +393,132 @@ const TutorDashboard = () => {
     if (user && window.confirm('Changing subjects will reset your dashboard data. Continue?')) {
       localStorage.removeItem(`tutor_subjects_${user.id}`);
       navigate('/tutor/subject-selection');
+    }
+  };
+
+  // Materials functions
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 100 * 1024 * 1024) {
+        setError('File size must be less than 100MB');
+        setTimeout(() => setError(''), 3000);
+        e.target.value = '';
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        file: file
+      }));
+    }
+  };
+
+  const handleMaterialSubmit = async (e) => {
+    e.preventDefault();
+    setUploading(true);
+    setError('');
+    setMaterialSuccess('');
+
+    if (!formData.file) {
+      setError('Please select a file to upload');
+      setUploading(false);
+      return;
+    }
+
+    if (!formData.title) {
+      setError('Please enter a title');
+      setUploading(false);
+      return;
+    }
+
+    if (!formData.subjectId && !formData.subjectName) {
+      setError('Please select a subject');
+      setUploading(false);
+      return;
+    }
+
+    const uploadData = new FormData();
+    uploadData.append('file', formData.file);
+    uploadData.append('title', formData.title);
+    uploadData.append('description', formData.description);
+    uploadData.append('subjectId', formData.subjectId);
+    uploadData.append('subjectName', formData.subjectName);
+    uploadData.append('topic', formData.topic);
+    uploadData.append('tags', formData.tags);
+    uploadData.append('tutorId', user.id);
+
+    try {
+      await axios.post(`${API_BASE_URL}/materials/upload`, uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setMaterialSuccess('Material uploaded successfully!');
+      setFormData({
+        title: '',
+        description: '',
+        subjectId: '',
+        subjectName: '',
+        topic: '',
+        tags: '',
+        file: null
+      });
+      setShowUploadForm(false);
+      fetchMaterials(user.id);
+      
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.value = '';
+      
+      setTimeout(() => setMaterialSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error uploading material:', error);
+      setError(error.response?.data?.error || 'Failed to upload material');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId) => {
+    if (!window.confirm('Are you sure you want to delete this material?')) return;
+
+    try {
+      await axios.delete(`${API_BASE_URL}/materials/${materialId}`);
+      setMaterialSuccess('Material deleted successfully');
+      fetchMaterials(user.id);
+      setTimeout(() => setMaterialSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error deleting material:', error);
+      setError('Failed to delete material');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (type) => {
+    switch (type) {
+      case 'pdf': return '📄';
+      case 'document': return '📝';
+      case 'presentation': return '📊';
+      case 'video': return '🎥';
+      case 'image': return '🖼️';
+      default: return '📎';
     }
   };
 
@@ -615,67 +780,6 @@ const TutorDashboard = () => {
         </div>
       )}
 
-      {/* Join Session Modal */}
-      {showJoinModal && selectedSession && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header" style={{ borderBottomColor: selectedSession.color }}>
-              <h3>Join Session</h3>
-              <button className="modal-close" onClick={() => setShowJoinModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="session-details">
-                <div className="session-detail-item">
-                  <span className="detail-label">Subject:</span>
-                  <span className="detail-value" style={{ color: selectedSession.color }}>
-                    {selectedSession.subject}
-                  </span>
-                </div>
-                <div className="session-detail-item">
-                  <span className="detail-label">Topic:</span>
-                  <span className="detail-value">{selectedSession.topic}</span>
-                </div>
-                <div className="session-detail-item">
-                  <span className="detail-label">Time:</span>
-                  <span className="detail-value">{selectedSession.date}, {selectedSession.time}</span>
-                </div>
-                <div className="session-detail-item">
-                  <span className="detail-label">Type:</span>
-                  <span className="detail-value">{selectedSession.type}</span>
-                </div>
-                <div className="session-detail-item">
-                  <span className="detail-label">Participants:</span>
-                  <span className="detail-value">{selectedSession.attendees?.join(', ')}</span>
-                </div>
-              </div>
-              
-              <div className="meeting-info">
-                <h4>Meeting Information</h4>
-                <p>You'll be redirected to Google Meet to start this session.</p>
-                <div className="meeting-link-box">
-                  <span className="link-label">Meeting Link:</span>
-                  <a href={selectedSession.meetingLink} target="_blank" rel="noopener noreferrer">
-                    {selectedSession.meetingLink}
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowJoinModal(false)}>
-                Cancel
-              </button>
-              <button 
-                className="modal-join-btn" 
-                onClick={handleStartMeeting}
-                style={{ backgroundColor: selectedSession.color }}
-              >
-                Start Meeting
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Quiz Modal */}
       {showQuizModal && (
         <div className="quiz-modal-overlay">
@@ -788,11 +892,72 @@ const TutorDashboard = () => {
         </div>
       )}
 
+      {/* Join Session Modal */}
+      {showJoinModal && selectedSession && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header" style={{ borderBottomColor: selectedSession.color }}>
+              <h3>Join Session</h3>
+              <button className="modal-close" onClick={() => setShowJoinModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="session-details">
+                <div className="session-detail-item">
+                  <span className="detail-label">Subject:</span>
+                  <span className="detail-value" style={{ color: selectedSession.color }}>
+                    {selectedSession.subject}
+                  </span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Topic:</span>
+                  <span className="detail-value">{selectedSession.topic}</span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Time:</span>
+                  <span className="detail-value">{selectedSession.date}, {selectedSession.time}</span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Type:</span>
+                  <span className="detail-value">{selectedSession.type}</span>
+                </div>
+                <div className="session-detail-item">
+                  <span className="detail-label">Participants:</span>
+                  <span className="detail-value">{selectedSession.attendees?.join(', ')}</span>
+                </div>
+              </div>
+              
+              <div className="meeting-info">
+                <h4>Meeting Information</h4>
+                <p>You'll be redirected to Google Meet to start this session.</p>
+                <div className="meeting-link-box">
+                  <span className="link-label">Meeting Link:</span>
+                  <a href={selectedSession.meetingLink} target="_blank" rel="noopener noreferrer">
+                    {selectedSession.meetingLink}
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowJoinModal(false)}>
+                Cancel
+              </button>
+              <button 
+                className="modal-join-btn" 
+                onClick={handleStartMeeting}
+                style={{ backgroundColor: selectedSession.color }}
+              >
+                Start Meeting
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="logout-modal-overlay">
           <div className="logout-modal">
-            <div className="logout-modal-icon">🚪</div>
+            <div className="logout-modal-icon"></div>
             <h3>Sign Out</h3>
             <p>Are you sure you want to sign out?</p>
             <div className="logout-modal-actions">
@@ -803,7 +968,7 @@ const TutorDashboard = () => {
         </div>
       )}
 
-      {/* Header */}
+      {/* Header - Boity's Design */}
       <header className="dashboard-header">
         <div className="header-left">
           <div className="logo-area">
@@ -812,6 +977,7 @@ const TutorDashboard = () => {
           </div>
           <span className="role-indicator tutor">Tutor</span>
         </div>
+
         <div className="header-right">
           <div className="subject-indicators">
             {selectedSubjects.map(subject => (
@@ -855,7 +1021,7 @@ const TutorDashboard = () => {
 
       {/* Main Content */}
       <main className="dashboard-main">
-        {/* Welcome Banner */}
+        {/* Welcome Banner - Boity's Design */}
         <div className="welcome-banner">
           <div className="banner-content">
             <h1>Good {new Date().getHours() < 12 ? 'Morning' : 'Afternoon'}, {user.firstName}! 👋</h1>
@@ -873,7 +1039,7 @@ const TutorDashboard = () => {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs - Boity's Design */}
         <div className="dashboard-tabs">
           <button 
             className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
@@ -903,10 +1069,18 @@ const TutorDashboard = () => {
           >
             Schedule
           </button>
+          <button 
+            className={`tab-button ${activeTab === 'materials' ? 'active' : ''}`}
+            onClick={() => setActiveTab('materials')}
+            type="button"
+          >
+            Materials
+          </button>
         </div>
 
         {/* Tab Content */}
         <div className="tab-content">
+          {/* Overview Tab */}
           {activeTab === 'overview' && (
             <>
               {/* Students by Subject Section */}
@@ -956,6 +1130,17 @@ const TutorDashboard = () => {
                     <h3>View Students</h3>
                     <p>Check all {students.length} student{students.length !== 1 ? 's' : ''}</p>
                   </button>
+
+                  <button className="action-card" onClick={() => {
+                    setActiveTab('materials');
+                    setShowUploadForm(true);
+                  }} type="button">
+                    <div className="action-icon-wrapper" style={{ backgroundColor: selectedSubjects[2]?.bgColor || '#f0fdf4' }}>
+                      <span style={{ color: selectedSubjects[2]?.color || '#48bb78' }}>📄</span>
+                    </div>
+                    <h3>Upload Material</h3>
+                    <p>Share study guides</p>
+                  </button>
                 </div>
               </section>
 
@@ -994,6 +1179,7 @@ const TutorDashboard = () => {
             </>
           )}
 
+          {/* Students Tab - Fixed with proper table structure */}
           {activeTab === 'students' && (
             <section className="content-section full-width">
               <div className="section-header">
@@ -1016,14 +1202,15 @@ const TutorDashboard = () => {
                 <div className="students-table-container">
                   <table className="students-table">
                     <thead>
-                      56
+                      <tr>
                         <th>Student</th>
                         <th>Subject</th>
                         <th>Progress</th>
                         <th>Grade</th>
                         <th>Last Active</th>
                         <th>Actions</th>
-                      </thead>
+                      </tr>
+                    </thead>
                     <tbody>
                       {students.map(student => (
                         <tr key={student.studentId}>
@@ -1096,6 +1283,7 @@ const TutorDashboard = () => {
             </section>
           )}
 
+          {/* Quizzes Tab */}
           {activeTab === 'quizzes' && (
             <section className="content-section full-width">
               <div className="section-header">
@@ -1142,6 +1330,7 @@ const TutorDashboard = () => {
             </section>
           )}
 
+          {/* Schedule Tab */}
           {activeTab === 'schedule' && (
             <section className="content-section full-width">
               <h2>Full Schedule</h2>
@@ -1179,6 +1368,167 @@ const TutorDashboard = () => {
               </div>
             </section>
           )}
+
+          {/* Materials Tab */}
+          {activeTab === 'materials' && (
+            <div className="material-container-inline">
+              {error && <div className="error-message">{error}</div>}
+              {materialSuccess && <div className="success-message">{materialSuccess}</div>}
+
+              {showUploadForm && (
+                <div className="upload-form-container">
+                  <div className="upload-form-header">
+                    <h2>Upload New Material</h2>
+                    <button onClick={() => setShowUploadForm(false)} className="close-form-btn">×</button>
+                  </div>
+                  <form onSubmit={handleMaterialSubmit} className="upload-form">
+                    <div className="form-group">
+                      <label>Title *</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Enter material title"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows="3"
+                        placeholder="Describe what this material is about"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Subject *</label>
+                        <select
+                          name="subjectId"
+                          value={formData.subjectId}
+                          onChange={(e) => {
+                            const selectedId = e.target.value;
+                            const selectedSubject = subjects.find(s => s.id.toString() === selectedId);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              subjectId: selectedId,
+                              subjectName: selectedSubject?.name || ''
+                            }));
+                          }}
+                          required
+                          className="subject-select"
+                        >
+                          <option value="">Select a subject</option>
+                          {subjects.map(subject => (
+                            <option key={subject.id} value={subject.id}>
+                              {subject.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Topic</label>
+                        <input
+                          type="text"
+                          name="topic"
+                          value={formData.topic}
+                          onChange={handleInputChange}
+                          placeholder="e.g., Algebra, Grammar, etc."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Tags (comma-separated)</label>
+                      <input
+                        type="text"
+                        name="tags"
+                        value={formData.tags}
+                        onChange={handleInputChange}
+                        placeholder="e.g., beginner, advanced, practice"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>File *</label>
+                      <input
+                        type="file"
+                        id="file-input"
+                        name="file"
+                        onChange={handleFileChange}
+                        required
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.jpg,.jpeg,.png"
+                      />
+                      <small>Supported: PDF, DOC, DOCX, PPT, PPTX, MP4, JPG, PNG (Max 100MB)</small>
+                    </div>
+
+                    <button type="submit" className="submit-btn" disabled={uploading}>
+                      {uploading ? 'Uploading...' : 'Upload Material'}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              <div className="materials-list">
+                <div className="materials-header">
+                  <h2>Your Materials ({materials.length})</h2>
+                  {!showUploadForm && (
+                    <button onClick={() => setShowUploadForm(true)} className="upload-new-btn">
+                      + Upload New Material
+                    </button>
+                  )}
+                </div>
+                {materials.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">📚</div>
+                    <p>No materials uploaded yet</p>
+                    <button onClick={() => setShowUploadForm(true)} className="empty-upload-btn">
+                      Upload Your First Material
+                    </button>
+                  </div>
+                ) : (
+                  <div className="materials-grid">
+                    {materials.map(material => (
+                      <div key={material.id} className="material-card-item">
+                        <div className="material-icon">{getFileIcon(material.materialType)}</div>
+                        <div className="material-info">
+                          <h3>{material.title}</h3>
+                          <p>{material.description || 'No description'}</p>
+                          <div className="material-meta">
+                            <span className="material-type-badge">{material.materialType}</span>
+                            <span>{formatFileSize(material.fileSize)}</span>
+                            <span>👁️ {material.views || 0}</span>
+                            <span>⬇️ {material.downloads || 0}</span>
+                          </div>
+                          {material.tags && material.tags.length > 0 && (
+                            <div className="material-tags">
+                              {material.tags.map((tag, idx) => (
+                                <span key={idx} className="tag">#{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="material-actions">
+                            <a href={`http://localhost:8080${material.fileUrl}`} target="_blank" rel="noopener noreferrer" className="view-btn">
+                              View
+                            </a>
+                            <button onClick={() => handleDeleteMaterial(material.id)} className="delete-btn">
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -1193,9 +1543,6 @@ const TutorDashboard = () => {
         </button>
         <button onClick={() => fetchDashboardData()} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', marginLeft: '5px' }}>
           Refresh
-        </button>
-        <button onClick={debugMessages} style={{ marginTop: '5px', padding: '4px 8px', fontSize: '10px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', marginLeft: '5px' }}>
-          Debug Messages
         </button>
       </div>
     </div>

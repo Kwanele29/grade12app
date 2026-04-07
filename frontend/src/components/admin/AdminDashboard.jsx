@@ -98,7 +98,7 @@ const AdminDashboard = () => {
       <div className="admin-content">
         {/* Welcome Section */}
         <div className="welcome-section">
-          <h1>Welcome back, {user.firstName}! 👋</h1>
+          <h1>Welcome , {user.firstName}! 👋</h1>
           <p>Here's what's happening with your platform today.</p>
         </div>
 
@@ -146,12 +146,6 @@ const AdminDashboard = () => {
               <span className="action-icon">➕</span>
               <h3>Add New User</h3>
               <p>Create student, tutor, or admin account</p>
-            </button>
-
-            <button className="action-card" onClick={() => navigateTo('/admin/content/add-paper')}>
-              <span className="action-icon">📄</span>
-              <h3>Upload Exam Paper</h3>
-              <p>Add new past exam paper</p>
             </button>
 
             <button className="action-card" onClick={() => navigateTo('/admin/approvals')}>

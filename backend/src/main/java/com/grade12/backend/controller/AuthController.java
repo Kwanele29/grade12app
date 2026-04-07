@@ -32,7 +32,7 @@ public class AuthController {
         try {
             // Check if email already exists
             if (userRepository.existsByEmail(request.getEmail())) {
-                return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Email already registered"));
+                return ResponseEntity.badRequest().body(new AuthResponse("Email already registered"));
             }
 
             // Create new user
@@ -44,11 +44,11 @@ public class AuthController {
             user.setAuthProvider("local");
             user.setEmailVerified(true);
             
-            // Set the category (this is the important part!)
+            // Set the category
             if (request.getCategory() != null && !request.getCategory().isEmpty()) {
                 user.setCategory(request.getCategory());
             } else {
-                user.setCategory("student"); // Default category if none provided
+                user.setCategory("student");
             }
 
             // Save user to database
@@ -56,18 +56,16 @@ public class AuthController {
             
             System.out.println("✅ User registered successfully: " + user.getEmail());
             System.out.println("   Category: " + user.getCategory());
-            System.out.println("   Name: " + user.getFirstName() + " " + user.getLastName());
 
-            // Generate tokens
+            // Generate token (only access token, no refresh token)
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
             String token = jwtService.generateToken(userDetails);
-            String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-            return ResponseEntity.ok(new AuthResponse(token, refreshToken, user));
+            return ResponseEntity.ok(new AuthResponse(token, null, user));
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Registration failed: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(new AuthResponse("Registration failed: " + e.getMessage()));
         }
     }
 
@@ -84,18 +82,17 @@ public class AuthController {
             User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Generate tokens
+            // Generate token (only access token)
             String token = jwtService.generateToken(userDetails);
-            String refreshToken = jwtService.generateRefreshToken(userDetails);
 
             System.out.println("✅ User logged in successfully: " + user.getEmail());
             System.out.println("   Category: " + user.getCategory());
 
-            return ResponseEntity.ok(new AuthResponse(token, refreshToken, user));
+            return ResponseEntity.ok(new AuthResponse(token, null, user));
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Invalid email or password"));
+            return ResponseEntity.badRequest().body(new AuthResponse("Invalid email or password"));
         }
     }
 
@@ -108,16 +105,15 @@ public class AuthController {
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
             
             String token = jwtService.generateToken(userDetails);
-            String refreshToken = jwtService.generateRefreshToken(userDetails);
             
             System.out.println("✅ OAuth2 login successful: " + user.getEmail());
             System.out.println("   Category: " + user.getCategory());
             
-            return ResponseEntity.ok(new AuthResponse(token, refreshToken, user));
+            return ResponseEntity.ok(new AuthResponse(token, null, user));
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "OAuth2 authentication failed"));
+            return ResponseEntity.badRequest().body(new AuthResponse("OAuth2 authentication failed"));
         }
     }
     
@@ -130,19 +126,6 @@ public class AuthController {
             return ResponseEntity.ok(user);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("User not found");
-        }
-    }
-    
-    // Optional: Get all users by category
-    @GetMapping("/users/category/{category}")
-    public ResponseEntity<?> getUsersByCategory(@PathVariable String category) {
-        try {
-            // You'll need to add this method to your UserRepository
-            // List<User> users = userRepository.findByCategory(category);
-            // return ResponseEntity.ok(users);
-            return ResponseEntity.ok("Endpoint ready - add repository method");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to get users");
         }
     }
 }

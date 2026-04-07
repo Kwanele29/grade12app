@@ -27,6 +27,8 @@ public class QuizController {
     private final UserRepository userRepository;
     private final StudentSubjectRepository studentSubjectRepository;
     
+    // ==================== TUTOR QUIZ ENDPOINTS (YOUR WORKING CODE) ====================
+    
     @PostMapping("/upload")
     public ResponseEntity<?> uploadQuiz(@RequestBody QuizUploadDTO uploadDTO) {
         try {
@@ -94,6 +96,8 @@ public class QuizController {
         }
     }
     
+    // ==================== STUDENT QUIZ ENDPOINTS ====================
+    
     @GetMapping("/student/all")
     public ResponseEntity<?> getAllQuizzesForStudents() {
         try {
@@ -123,6 +127,19 @@ public class QuizController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+    
+    // ==================== DEBUG ENDPOINTS ====================
+    
+    @GetMapping("/debug/all")
+    public ResponseEntity<?> debugAllQuizzes() {
+        try {
+            List<Quiz> quizzes = quizService.getAllQuizzes();
+            System.out.println("DEBUG - All quizzes: " + quizzes.size());
+            return ResponseEntity.ok(quizzes);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }

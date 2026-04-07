@@ -6,14 +6,18 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import StudentDashboard from './components/student/StudentDashboard';
-import StudentSubjectSelection from './components/student/StudentSubjectSelection';
-import Subjects from './components/student/Subjects'; // IMPORT THE SUBJECTS COMPONENT
-import TutorDashboard from './components/tutor/TutorDashboard';
 import TutorSubjectSelection from './components/tutor/TutorSubjectSelection';
+import StudentSubjectSelection from './components/student/StudentSubjectSelection';
+import Subjects from './components/student/Subjects';
+import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
 import TestQuizzes from './components/student/TestQuizzes';
+import Material from './components/tutor/Material';
+import TutorSessions from './components/tutor/TutorSessions';
+import TutorQuizzes from './components/tutor/TutorQuizzes';
+import TutorFeedback from './components/tutor/TutorFeedback';
 import './App.css';
 
 // Protected Route component to check authentication and role
@@ -33,14 +37,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       switch(user.category) {
         case 'student':
           const studentSubjects = localStorage.getItem(`student_subjects_${user.id}`);
-          if (studentSubjects) {
+          if (studentSubjects && studentSubjects !== '[]' && studentSubjects !== 'null') {
             return <Navigate to="/student-dashboard" replace />;
           } else {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
           const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
-          if (tutorSubjects) {
+          if (tutorSubjects && tutorSubjects !== '[]' && tutorSubjects !== 'null') {
             return <Navigate to="/tutor-dashboard" replace />;
           } else {
             return <Navigate to="/tutor/subject-selection" replace />;
@@ -70,14 +74,14 @@ const PublicRoute = ({ children }) => {
       switch(user.category) {
         case 'student':
           const studentSubjects = localStorage.getItem(`student_subjects_${user.id}`);
-          if (studentSubjects) {
+          if (studentSubjects && studentSubjects !== '[]' && studentSubjects !== 'null') {
             return <Navigate to="/student-dashboard" replace />;
           } else {
             return <Navigate to="/student/subject-selection" replace />;
           }
         case 'tutor':
           const tutorSubjects = localStorage.getItem(`tutor_subjects_${user.id}`);
-          if (tutorSubjects) {
+          if (tutorSubjects && tutorSubjects !== '[]' && tutorSubjects !== 'null') {
             return <Navigate to="/tutor-dashboard" replace />;
           } else {
             return <Navigate to="/tutor/subject-selection" replace />;
@@ -100,7 +104,7 @@ function App() {
         <Router>
             <div className="App">
                 <Routes>
-                    {/* Public Routes */}
+                    {/* ==================== PUBLIC ROUTES ==================== */}
                     <Route path="/" element={
                         <PublicRoute>
                             <Home />
@@ -123,7 +127,7 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password/:token" element={<ResetPassword />} />
                     
-                    {/* Student Routes */}
+                    {/* ==================== STUDENT ROUTES ==================== */}
                     <Route path="/student/subject-selection" element={
                         <ProtectedRoute allowedRoles={['student']}>
                             <StudentSubjectSelection />
@@ -142,14 +146,13 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* FIXED: Subjects route now uses the Subjects component */}
                     <Route path="/subjects" element={
                         <ProtectedRoute allowedRoles={['student']}>
                             <Subjects />
                         </ProtectedRoute>
                     } />
                     
-                    {/* Tutor Routes */}
+                    {/* ==================== TUTOR ROUTES ==================== */}
                     <Route path="/tutor/subject-selection" element={
                         <ProtectedRoute allowedRoles={['tutor']}>
                             <TutorSubjectSelection />
@@ -162,17 +165,65 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* Admin Routes */}
+                    {/* Materials Management */}
+                    <Route path="/tutor/materials" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <Material />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Alternative route for upload material (backward compatibility) */}
+                    <Route path="/tutor/upload-material" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <Material />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Sessions Management */}
+                    <Route path="/tutor/sessions" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorSessions />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Quizzes Management */}
+                    <Route path="/tutor/quizzes" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorQuizzes />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Alternative route for quiz (backward compatibility) */}
+                    <Route path="/tutor/quiz" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorQuizzes />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Feedback Management */}
+                    <Route path="/tutor/feedback" element={
+                        <ProtectedRoute allowedRoles={['tutor']}>
+                            <TutorFeedback />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* ==================== ADMIN ROUTES ==================== */}
                     <Route path="/admin-dashboard" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminDashboard />
                         </ProtectedRoute>
                     } />
                     
-                    {/* Test Route */}
+                    <Route path="/subject-manager" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <SubjectManager />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* ==================== TEST ROUTES ==================== */}
                     <Route path="/test-quizzes" element={<TestQuizzes />} />
                     
-                    {/* Catch all - redirect to home */}
+                    {/* ==================== CATCH ALL ==================== */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </div>

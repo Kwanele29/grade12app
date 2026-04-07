@@ -107,7 +107,6 @@ const Quizzes = () => {
   }, [timerActive, timeRemaining, quizStarted, showResults]);
 
   const handleStartQuiz = (quiz) => {
-    // Set timer based on quiz timeLimitMinutes (convert minutes to seconds)
     const timerSeconds = (quiz.timeLimitMinutes || 30) * 60;
     setSelectedQuiz(quiz);
     setQuizStarted(true);
@@ -156,7 +155,6 @@ const Quizzes = () => {
       const result = await response.json();
       console.log('Quiz result:', result);
       
-      // Ensure we have all required fields
       const resultsData = {
         obtainedMarks: result.obtainedMarks || result.score || 0,
         totalMarks: result.totalMarks || selectedQuiz.totalMarks || 0,
@@ -242,7 +240,6 @@ const Quizzes = () => {
   return (
     <div className="quizzes-container">
       {!quizStarted ? (
-        // Quiz Selection View
         <div className="quiz-selection-view">
           <div className="quizzes-header">
             <button className="back-button" onClick={() => navigate('/student-dashboard')}>← Back</button>
@@ -311,7 +308,6 @@ const Quizzes = () => {
           </div>
         </div>
       ) : showResults ? (
-        // Results View
         <div className="quiz-results-view">
           <button className="back-button" onClick={handleBackToQuizzes}>← Back</button>
           <div className="results-header">
@@ -341,7 +337,6 @@ const Quizzes = () => {
           </div>
         </div>
       ) : (
-        // Quiz Taking View
         <div className="quiz-taking-view">
           <div className="quiz-header">
             <button className="back-button" onClick={handleBackToQuizzes}>←</button>
@@ -353,7 +348,7 @@ const Quizzes = () => {
             </div>
             <div className="quiz-progress">
               <span className="question-counter">{currentQuestion + 1}/{selectedQuiz.questions.length}</span>
-              <div className="timer-display" style={{ color: timeRemaining < 300 ? '#ef4444' : '#64748b' }}>
+              <div className="timer-display" style={{ color: timeRemaining < 300 ? '#f56565' : '#C5C6C7' }}>
                 ⏱️ {formatTime(timeRemaining)}
               </div>
             </div>
@@ -366,7 +361,7 @@ const Quizzes = () => {
           <div className="question-section">
             <div className="question-number">
               Question {currentQuestion + 1} of {selectedQuiz.questions.length}
-              <span style={{ marginLeft: '10px', color: '#64748b' }}>(Marks: {selectedQuiz.questions[currentQuestion].marks})</span>
+              <span style={{ marginLeft: '10px', color: '#C5C6C7' }}>(Marks: {selectedQuiz.questions[currentQuestion].marks})</span>
             </div>
             <h3 className="question-text">{selectedQuiz.questions[currentQuestion].question}</h3>
             
@@ -410,7 +405,7 @@ const Quizzes = () => {
                 style={{
                   background: Object.keys(selectedAnswers).length === selectedQuiz.questions.length 
                     ? selectedQuiz.subjectColor 
-                    : '#cbd5e1',
+                    : '#C5C6C7',
                   cursor: Object.keys(selectedAnswers).length === selectedQuiz.questions.length 
                     ? 'pointer' 
                     : 'not-allowed',
@@ -427,7 +422,7 @@ const Quizzes = () => {
                 style={{
                   background: isCurrentQuestionAnswered() 
                     ? selectedQuiz.subjectColor 
-                    : '#cbd5e1',
+                    : '#C5C6C7',
                   cursor: isCurrentQuestionAnswered() ? 'pointer' : 'not-allowed',
                   opacity: isCurrentQuestionAnswered() ? 1 : 0.6
                 }}

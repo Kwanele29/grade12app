@@ -24,7 +24,6 @@ public class SubjectController {
     @Autowired
     private UserRepository userRepository;
     
-    // Get all subjects with tutor information
     @GetMapping
     public ResponseEntity<?> getAllSubjects() {
         try {
@@ -41,7 +40,6 @@ public class SubjectController {
                 subjectMap.put("description", subject.getDescription());
                 subjectMap.put("tutorId", subject.getTutorId());
                 
-                // Add tutor name if tutor exists
                 if (subject.getTutorId() != null) {
                     User tutor = userRepository.findById(subject.getTutorId()).orElse(null);
                     if (tutor != null) {
@@ -63,46 +61,6 @@ public class SubjectController {
         }
     }
     
-    // Get all subjects with tutors (for the Subjects page)
-    @GetMapping("/with-tutors")
-    public ResponseEntity<?> getAllSubjectsWithTutors() {
-        try {
-            List<Subject> subjects = subjectRepository.findAll();
-            List<Map<String, Object>> result = new ArrayList<>();
-            
-            for (Subject subject : subjects) {
-                Map<String, Object> subjectMap = new HashMap<>();
-                subjectMap.put("id", subject.getId());
-                subjectMap.put("name", subject.getName());
-                subjectMap.put("icon", subject.getIconUrl() != null ? subject.getIconUrl() : "📚");
-                subjectMap.put("color", subject.getColor() != null ? subject.getColor() : "#3b82f6");
-                subjectMap.put("bgColor", subject.getBgColor() != null ? subject.getBgColor() : "#eff6ff");
-                subjectMap.put("description", subject.getDescription());
-                subjectMap.put("tutorId", subject.getTutorId());
-                
-                // Add tutor name
-                if (subject.getTutorId() != null) {
-                    User tutor = userRepository.findById(subject.getTutorId()).orElse(null);
-                    if (tutor != null) {
-                        subjectMap.put("tutorName", tutor.getFirstName() + " " + tutor.getLastName());
-                        subjectMap.put("tutorEmail", tutor.getEmail());
-                    } else {
-                        subjectMap.put("tutorName", "Not Assigned");
-                    }
-                } else {
-                    subjectMap.put("tutorName", "Not Assigned");
-                }
-                
-                result.add(subjectMap);
-            }
-            
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    // Get subject by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getSubjectById(@PathVariable Long id) {
         return subjectRepository.findById(id)
@@ -128,13 +86,11 @@ public class SubjectController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Create new subject
     @PostMapping
     public Subject createSubject(@RequestBody Subject subject) {
         return subjectRepository.save(subject);
     }
     
-    // Update subject
     @PutMapping("/{id}")
     public ResponseEntity<Subject> updateSubject(@PathVariable Long id, @RequestBody Subject subjectDetails) {
         return subjectRepository.findById(id)
@@ -150,7 +106,6 @@ public class SubjectController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Delete subject
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSubject(@PathVariable Long id) {
         return subjectRepository.findById(id)
