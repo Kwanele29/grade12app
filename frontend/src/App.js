@@ -11,6 +11,7 @@ import StudentSubjectSelection from './components/student/StudentSubjectSelectio
 import Subjects from './components/student/Subjects';
 import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import AdminUsers from './components/admin/AdminUsers';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
 import TestQuizzes from './components/student/TestQuizzes';
@@ -211,6 +212,13 @@ function App() {
                     <Route path="/admin-dashboard" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminDashboard />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin Users Management Route */}
+                    <Route path="/admin/users" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminUsers />
                         </ProtectedRoute>
                     } />
                     

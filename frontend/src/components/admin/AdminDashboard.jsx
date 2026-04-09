@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminDashboard.css';
+import AdminUsers from './AdminUsers';
+// Import other admin components as you create them
+// import AdminContent from './AdminContent';
+// import AdminReports from './AdminReports';
+// import AdminSettings from './AdminSettings';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
+  const [activeMenu, setActiveMenu] = useState('dashboard');
   const [stats, setStats] = useState({
     totalStudents: 1247,
     totalTutors: 89,
@@ -15,7 +22,6 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    // Get user from localStorage
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
@@ -31,10 +37,24 @@ const AdminDashboard = () => {
     }
     
     setUser(parsedUser);
-    
-    // Fetch admin stats from backend
     fetchAdminStats();
   }, [navigate]);
+
+  // Set active menu based on current path
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/admin-dashboard') {
+      setActiveMenu('dashboard');
+    } else if (path === '/admin/users') {
+      setActiveMenu('users');
+    } else if (path === '/admin/content') {
+      setActiveMenu('content');
+    } else if (path === '/admin/reports') {
+      setActiveMenu('reports');
+    } else if (path === '/admin/settings') {
+      setActiveMenu('settings');
+    }
+  }, [location]);
 
   const fetchAdminStats = async () => {
     try {
@@ -60,8 +80,167 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
-  const navigateTo = (path) => {
-    navigate(path);
+  const handleMenuClick = (menu) => {
+    setActiveMenu(menu);
+    switch(menu) {
+      case 'dashboard':
+        navigate('/admin-dashboard');
+        break;
+      case 'users':
+        navigate('/admin/users');
+        break;
+      case 'content':
+        navigate('/admin/content');
+        break;
+      case 'reports':
+        navigate('/admin/reports');
+        break;
+      case 'settings':
+        navigate('/admin/settings');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Function to render the main content based on the current route
+  const renderMainContent = () => {
+    const path = location.pathname;
+    
+    switch(path) {
+      case '/admin/users':
+        return <AdminUsers />;
+      case '/admin/content':
+        // return <AdminContent />;
+        return <div className="coming-soon">Content Management - Coming Soon</div>;
+      case '/admin/reports':
+        // return <AdminReports />;
+        return <div className="coming-soon">Reports & Analytics - Coming Soon</div>;
+      case '/admin/settings':
+        // return <AdminSettings />;
+        return <div className="coming-soon">System Settings - Coming Soon</div>;
+      default:
+        return (
+          <>
+            {/* Stats Grid */}
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">👥</div>
+                <div className="stat-details">
+                  <h3>Total Students</h3>
+                  <p className="stat-number">{stats.totalStudents}</p>
+                  <span className="stat-trend positive">+{stats.newUsersToday} today</span>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">👨‍🏫</div>
+                <div className="stat-details">
+                  <h3>Total Tutors</h3>
+                  <p className="stat-number">{stats.totalTutors}</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">👑</div>
+                <div className="stat-details">
+                  <h3>Administrators</h3>
+                  <p className="stat-number">{stats.totalAdmins}</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">🟢</div>
+                <div className="stat-details">
+                  <h3>Active Sessions</h3>
+                  <p className="stat-number">{stats.activeSessions}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="quick-actions">
+              <h2>Quick Actions</h2>
+              <div className="actions-grid">
+                <button className="action-card" onClick={() => handleMenuClick('users')}>
+                  <span className="action-icon">➕</span>
+                  <h3>Add New User</h3>
+                  <p>Create student, tutor, or admin account</p>
+                </button>
+
+                <button className="action-card" onClick={() => handleMenuClick('content')}>
+                  <span className="action-icon">✓</span>
+                  <h3>Pending Approvals</h3>
+                  <p>{stats.pendingApprovals} items awaiting review</p>
+                </button>
+
+                <button className="action-card" onClick={() => handleMenuClick('settings')}>
+                  <span className="action-icon">💾</span>
+                  <h3>Backup System</h3>
+                  <p>Create database backup</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="recent-activity">
+              <h2>Recent Activity</h2>
+              <div className="activity-list">
+                <div className="activity-item">
+                  <span className="activity-time">2 min ago</span>
+                  <span className="activity-text">New user registered: Thabo Mokoena (Student)</span>
+                </div>
+                <div className="activity-item">
+                  <span className="activity-time">15 min ago</span>
+                  <span className="activity-text">Exam paper uploaded: Mathematics P1 2023</span>
+                </div>
+                <div className="activity-item">
+                  <span className="activity-time">1 hour ago</span>
+                  <span className="activity-text">Tutor application approved: Sarah Johnson</span>
+                </div>
+                <div className="activity-item">
+                  <span className="activity-time">3 hours ago</span>
+                  <span className="activity-text">System backup completed successfully</span>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+    }
+  };
+
+  // Get the page title based on current route
+  const getPageTitle = () => {
+    const path = location.pathname;
+    switch(path) {
+      case '/admin/users':
+        return 'User Management';
+      case '/admin/content':
+        return 'Content Management';
+      case '/admin/reports':
+        return 'Reports & Analytics';
+      case '/admin/settings':
+        return 'System Settings';
+      default:
+        return 'Dashboard';
+    }
+  };
+
+  // Get the page subtitle based on current route
+  const getPageSubtitle = () => {
+    const path = location.pathname;
+    switch(path) {
+      case '/admin/users':
+        return 'Manage students, tutors, and administrators';
+      case '/admin/content':
+        return 'Manage study materials, quizzes, and resources';
+      case '/admin/reports':
+        return 'View system analytics and reports';
+      case '/admin/settings':
+        return 'Configure system settings and preferences';
+      default:
+        return `Welcome back, ${user?.firstName}!`;
+    }
   };
 
   if (!user) {
@@ -70,121 +249,94 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      {/* Navigation */}
-      <nav className="admin-nav">
-        <div className="nav-brand">
-          <h2>📚 Grade 12 Central</h2>
+      {/* Sidebar */}
+      <aside className="admin-sidebar">
+        <div className="sidebar-header">
+          <div className="logo-area">
+            <span className="logo-icon">📚</span>
+            <span className="logo-text">Grade<span>12</span>Central</span>
+          </div>
           <span className="role-badge admin">Admin</span>
         </div>
-        
-        <div className="nav-links">
-          <button className="nav-link active">Dashboard</button>
-          <button className="nav-link" onClick={() => navigateTo('/admin/users')}>Users</button>
-          <button className="nav-link" onClick={() => navigateTo('/admin/content')}>Content</button>
-          <button className="nav-link" onClick={() => navigateTo('/admin/reports')}>Reports</button>
-          <button className="nav-link" onClick={() => navigateTo('/admin/settings')}>Settings</button>
-        </div>
-        
-        <div className="nav-user">
-          <div className="user-info">
-            <span className="user-name">{user.firstName} {user.lastName}</span>
-            <span className="user-email">{user.email}</span>
+
+        <nav className="sidebar-nav">
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'dashboard' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('dashboard')}
+          >
+            <span className="menu-icon">📊</span>
+            <span className="menu-text">Dashboard</span>
+          </button>
+
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'users' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('users')}
+          >
+            <span className="menu-icon">👥</span>
+            <span className="menu-text">Users</span>
+          </button>
+
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'content' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('content')}
+          >
+            <span className="menu-icon">📚</span>
+            <span className="menu-text">Content</span>
+          </button>
+
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'reports' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('reports')}
+          >
+            <span className="menu-icon">📈</span>
+            <span className="menu-text">Reports</span>
+          </button>
+
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'settings' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('settings')}
+          >
+            <span className="menu-icon">⚙️</span>
+            <span className="menu-text">Settings</span>
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="user-profile">
+            <div className="user-avatar">
+              {user.firstName?.[0]}{user.lastName?.[0]}
+            </div>
+            <div className="user-details">
+              <span className="user-name">{user.firstName} {user.lastName}</span>
+              <span className="user-role">Administrator</span>
+            </div>
           </div>
-          <button onClick={handleLogout} className="logout-btn">Logout</button>
+          <button onClick={handleLogout} className="logout-btn">
+            <span className="logout-icon">🚪</span>
+            <span>Logout</span>
+          </button>
         </div>
-      </nav>
+      </aside>
 
       {/* Main Content */}
-      <div className="admin-content">
-        {/* Welcome Section */}
-        <div className="welcome-section">
-          <h1>Welcome , {user.firstName}! 👋</h1>
-          <p>Here's what's happening with your platform today.</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">👥</div>
-            <div className="stat-details">
-              <h3>Total Students</h3>
-              <p className="stat-number">{stats.totalStudents}</p>
-              <span className="stat-trend positive">+{stats.newUsersToday} today</span>
-            </div>
+      <main className="admin-main">
+        {/* Top Bar */}
+        <div className="top-bar">
+          <div className="page-title">
+            <h1>{getPageTitle()}</h1>
+            <p>{getPageSubtitle()}</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">👨‍🏫</div>
-            <div className="stat-details">
-              <h3>Total Tutors</h3>
-              <p className="stat-number">{stats.totalTutors}</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">👑</div>
-            <div className="stat-details">
-              <h3>Administrators</h3>
-              <p className="stat-number">{stats.totalAdmins}</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">🟢</div>
-            <div className="stat-details">
-              <h3>Active Sessions</h3>
-              <p className="stat-number">{stats.activeSessions}</p>
+          <div className="top-bar-actions">
+            <div className="date-badge">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="quick-actions">
-          <h2>Quick Actions</h2>
-          <div className="actions-grid">
-            <button className="action-card" onClick={() => navigateTo('/admin/users/add')}>
-              <span className="action-icon">➕</span>
-              <h3>Add New User</h3>
-              <p>Create student, tutor, or admin account</p>
-            </button>
-
-            <button className="action-card" onClick={() => navigateTo('/admin/approvals')}>
-              <span className="action-icon">✓</span>
-              <h3>Pending Approvals</h3>
-              <p>{stats.pendingApprovals} items awaiting review</p>
-            </button>
-
-            <button className="action-card" onClick={() => navigateTo('/admin/backup')}>
-              <span className="action-icon">💾</span>
-              <h3>Backup System</h3>
-              <p>Create database backup</p>
-            </button>
-          </div>
+        <div className="admin-content">
+          {renderMainContent()}
         </div>
-
-        {/* Recent Activity */}
-        <div className="recent-activity">
-          <h2>Recent Activity</h2>
-          <div className="activity-list">
-            <div className="activity-item">
-              <span className="activity-time">2 min ago</span>
-              <span className="activity-text">New user registered: Thabo Mokoena (Student)</span>
-            </div>
-            <div className="activity-item">
-              <span className="activity-time">15 min ago</span>
-              <span className="activity-text">Exam paper uploaded: Mathematics P1 2023</span>
-            </div>
-            <div className="activity-item">
-              <span className="activity-time">1 hour ago</span>
-              <span className="activity-text">Tutor application approved: Sarah Johnson</span>
-            </div>
-            <div className="activity-item">
-              <span className="activity-time">3 hours ago</span>
-              <span className="activity-text">System backup completed successfully</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
