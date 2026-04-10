@@ -12,6 +12,9 @@ import Subjects from './components/student/Subjects';
 import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminUsers from './components/admin/AdminUsers';
+import AdminContent from './components/admin/AdminContent';
+import AdminReports from './components/admin/AdminReports';
+import AdminSettings from './components/admin/AdminSettings';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
 import TestQuizzes from './components/student/TestQuizzes';
@@ -209,19 +212,42 @@ function App() {
                     } />
                     
                     {/* ==================== ADMIN ROUTES ==================== */}
+                    {/* Main Admin Dashboard */}
                     <Route path="/admin-dashboard" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminDashboard />
                         </ProtectedRoute>
                     } />
                     
-                    {/* Admin Users Management Route */}
+                    {/* Admin User Management */}
                     <Route path="/admin/users" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminUsers />
                         </ProtectedRoute>
                     } />
                     
+                    {/* Admin Content Management */}
+                    <Route path="/admin/content" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminContent />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin Reports & Analytics */}
+                    <Route path="/admin/reports" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminReports />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin System Settings */}
+                    <Route path="/admin/settings" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminSettings />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Subject Manager (Legacy) */}
                     <Route path="/subject-manager" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <SubjectManager />

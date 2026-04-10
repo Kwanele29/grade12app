@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminDashboard.css';
 import AdminUsers from './AdminUsers';
-// Import other admin components as you create them
-// import AdminContent from './AdminContent';
-// import AdminReports from './AdminReports';
-// import AdminSettings from './AdminSettings';
+import AdminContent from './AdminContent';
+import AdminReports from './AdminReports';
+import AdminSettings from './AdminSettings';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -111,14 +110,11 @@ const AdminDashboard = () => {
       case '/admin/users':
         return <AdminUsers />;
       case '/admin/content':
-        // return <AdminContent />;
-        return <div className="coming-soon">Content Management - Coming Soon</div>;
+        return <AdminContent />;
       case '/admin/reports':
-        // return <AdminReports />;
-        return <div className="coming-soon">Reports & Analytics - Coming Soon</div>;
+        return <AdminReports />;
       case '/admin/settings':
-        // return <AdminSettings />;
-        return <div className="coming-soon">System Settings - Coming Soon</div>;
+        return <AdminSettings />;
       default:
         return (
           <>
@@ -169,15 +165,21 @@ const AdminDashboard = () => {
                 </button>
 
                 <button className="action-card" onClick={() => handleMenuClick('content')}>
-                  <span className="action-icon">✓</span>
-                  <h3>Pending Approvals</h3>
-                  <p>{stats.pendingApprovals} items awaiting review</p>
+                  <span className="action-icon">📚</span>
+                  <h3>Manage Content</h3>
+                  <p>Upload materials and create quizzes</p>
+                </button>
+
+                <button className="action-card" onClick={() => handleMenuClick('reports')}>
+                  <span className="action-icon">📊</span>
+                  <h3>View Reports</h3>
+                  <p>Access detailed analytics and insights</p>
                 </button>
 
                 <button className="action-card" onClick={() => handleMenuClick('settings')}>
-                  <span className="action-icon">💾</span>
-                  <h3>Backup System</h3>
-                  <p>Create database backup</p>
+                  <span className="action-icon">⚙️</span>
+                  <h3>System Settings</h3>
+                  <p>Configure platform preferences</p>
                 </button>
               </div>
             </div>

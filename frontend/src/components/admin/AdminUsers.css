@@ -101,19 +101,24 @@
   border-color: #66FCF1;
 }
 
+/* FIXED SEARCH BOX STYLES */
 .search-box {
   position: relative;
+  display: inline-block;
+  width: 280px;
 }
 
 .search-box input {
+  width: 100%;
   padding: 10px 40px 10px 16px;
   border: 1px solid rgba(102, 252, 241, 0.2);
   border-radius: 8px;
   font-size: 14px;
-  width: 280px;
-  transition: var(--transition, all 0.3s ease);
   background: var(--dark-secondary, #1F2833);
   color: var(--text-light, #C5C6C7);
+  transition: var(--transition, all 0.3s ease);
+  outline: none;
+  box-sizing: border-box;
 }
 
 .search-box input:focus {
@@ -132,6 +137,8 @@
   top: 50%;
   transform: translateY(-50%);
   color: rgba(102, 252, 241, 0.5);
+  pointer-events: none;
+  font-size: 14px;
 }
 
 /* Table Styles */
@@ -174,7 +181,6 @@
 
 .users-table tbody tr:hover {
   background: rgba(102, 252, 241, 0.05);
-  transform: scale(1.01);
 }
 
 /* User Cell Styles */
@@ -227,26 +233,6 @@
   color: #66FCF1;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-badge.active {
-  background: rgba(69, 162, 158, 0.2);
-  color: #45A29E;
-  border: 1px solid rgba(69, 162, 158, 0.3);
-}
-
-.status-badge.suspended {
-  background: rgba(245, 101, 101, 0.2);
-  color: #f56565;
-  border: 1px solid rgba(245, 101, 101, 0.3);
-}
-
 /* Action Buttons */
 .actions-cell {
   display: flex;
@@ -276,12 +262,6 @@
   background: #66FCF1;
   color: #0B0C10;
   border-color: #66FCF1;
-}
-
-.action-btn.status:hover {
-  background: #f59e0b;
-  color: white;
-  border-color: #f59e0b;
 }
 
 .action-btn.delete:hover {
@@ -389,6 +369,7 @@
   transition: var(--transition, all 0.3s ease);
   background: rgba(11, 12, 16, 0.6);
   color: var(--text-light, #C5C6C7);
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -494,6 +475,10 @@
     justify-content: center;
   }
 
+  .search-box {
+    width: 100%;
+  }
+  
   .search-box input {
     width: 100%;
   }
@@ -528,11 +513,6 @@
   .category-badge {
     font-size: 11px;
     padding: 4px 8px;
-  }
-  
-  .status-badge {
-    font-size: 10px;
-    padding: 3px 8px;
   }
   
   .modal-content {

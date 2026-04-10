@@ -30,9 +30,10 @@ const AdminUsers = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        const usersData = Array.isArray(data) ? data : (data.users || data.data || []);
+        setUsers(usersData);
       } else {
-        // Mock data for demonstration
+        console.error('Failed to fetch users from database');
         setUsers(mockUsers);
       }
     } catch (error) {
@@ -55,9 +56,13 @@ const AdminUsers = () => {
         });
         if (response.ok) {
           setUsers(users.filter(user => user.id !== userId));
+          alert('User deleted successfully');
+        } else {
+          alert('Failed to delete user');
         }
       } catch (error) {
         console.error('Error deleting user:', error);
+        alert('Error deleting user');
       }
     }
   };
@@ -76,7 +81,8 @@ const AdminUsers = () => {
       });
       if (response.ok) {
         const newUser = await response.json();
-        setUsers([...users, newUser]);
+        const userData = newUser.user || newUser.data || newUser;
+        setUsers([...users, userData]);
         setShowAddModal(false);
         setFormData({
           firstName: '',
@@ -85,47 +91,83 @@ const AdminUsers = () => {
           category: 'student',
           password: ''
         });
+        alert('User added successfully');
+      } else {
+        alert('Failed to add user');
       }
     } catch (error) {
       console.error('Error adding user:', error);
+      alert('Error adding user');
     }
   };
 
-  const handleUpdateStatus = async (userId, currentStatus) => {
-    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/admin/users/${userId}/status`, {
-        method: 'PATCH',
+      const response = await fetch(`http://localhost:8080/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({
+          firstName: selectedUser.firstName,
+          lastName: selectedUser.lastName,
+          email: selectedUser.email,
+          category: selectedUser.category
+        })
       });
       if (response.ok) {
-        setUsers(users.map(user => 
-          user.id === userId ? { ...user, status: newStatus } : user
-        ));
+        const updatedUser = await response.json();
+        const userData = updatedUser.user || updatedUser.data || updatedUser;
+        setUsers(users.map(user => user.id === selectedUser.id ? userData : user));
+        setSelectedUser(null);
+        alert('User updated successfully');
+      } else {
+        alert('Failed to update user');
       }
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Error updating user:', error);
+      alert('Error updating user');
     }
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    console.log('Search input changed:', e.target.value);
+    setSearchTerm(e.target.value);
   };
 
   const getFilteredUsers = () => {
     let filtered = users;
     
+    // Apply category filter
     if (filter !== 'all') {
       filtered = filtered.filter(user => user.category === filter);
     }
     
-    if (searchTerm) {
-      filtered = filtered.filter(user => 
-        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    // Apply search filter
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim();
+      console.log('Searching for:', searchLower);
+      filtered = filtered.filter(user => {
+        const firstName = (user.firstName || '').toLowerCase();
+        const lastName = (user.lastName || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const fullName = (firstName + ' ' + lastName).toLowerCase();
+        
+        const matches = firstName.includes(searchLower) ||
+               lastName.includes(searchLower) ||
+               fullName.includes(searchLower) ||
+               email.includes(searchLower);
+        
+        if (matches) {
+          console.log('Found match:', user.firstName, user.lastName);
+        }
+        return matches;
+      });
+      console.log('Filtered users count:', filtered.length);
     }
     
     return filtered;
@@ -140,14 +182,8 @@ const AdminUsers = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    return status === 'active' 
-      ? <span className="status-badge active">Active</span>
-      : <span className="status-badge suspended">Suspended</span>;
-  };
-
   if (loading) {
-    return <div className="loading-users">Loading users...</div>;
+    return <div className="loading-users">Loading users from database...</div>;
   }
 
   return (
@@ -193,11 +229,24 @@ const AdminUsers = () => {
         <div className="search-box">
           <input
             type="text"
+            id="user-search-input"
             placeholder="Search by name or email..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
+            onClick={() => console.log('Search input clicked')}
+            onFocus={() => console.log('Search input focused')}
+            style={{ 
+              padding: '10px 40px 10px 16px',
+              border: '1px solid rgba(102, 252, 241, 0.2)',
+              borderRadius: '8px',
+              background: '#1F2833',
+              color: '#C5C6C7',
+              width: '280px'
+            }}
           />
-          <span className="search-icon">🔍</span>
+          <span className="search-icon" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+            🔍
+          </span>
         </div>
       </div>
 
@@ -208,56 +257,55 @@ const AdminUsers = () => {
               <th>User</th>
               <th>Email</th>
               <th>Category</th>
-              <th>Status</th>
               <th>Joined</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {getFilteredUsers().map(user => (
-              <tr key={user.id}>
-                <td className="user-cell">
-                  <div className="user-avatar">
-                    {user.firstName?.[0]}{user.lastName?.[0]}
-                  </div>
-                  <div className="user-info">
-                    <div className="user-name">{user.firstName} {user.lastName}</div>
-                    <div className="user-id">ID: {user.id}</div>
-                  </div>
-                </td>
-                <td>{user.email}</td>
-                <td>
-                  <span className="category-badge">
-                    {getCategoryIcon(user.category)} {user.category}
-                  </span>
-                </td>
-                <td>{getStatusBadge(user.status)}</td>
-                <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                <td className="actions-cell">
-                  <button 
-                    className="action-btn edit"
-                    onClick={() => setSelectedUser(user)}
-                    title="Edit"
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    className="action-btn status"
-                    onClick={() => handleUpdateStatus(user.id, user.status)}
-                    title={user.status === 'active' ? 'Suspend' : 'Activate'}
-                  >
-                    {user.status === 'active' ? '🔒' : '🔓'}
-                  </button>
-                  <button 
-                    className="action-btn delete"
-                    onClick={() => handleDeleteUser(user.id)}
-                    title="Delete"
-                  >
-                    🗑️
-                  </button>
+            {getFilteredUsers().length > 0 ? (
+              getFilteredUsers().map(user => (
+                <tr key={user.id}>
+                  <td className="user-cell">
+                    <div className="user-avatar">
+                      {user.firstName?.[0]}{user.lastName?.[0]}
+                    </div>
+                    <div className="user-info">
+                      <div className="user-name">{user.firstName} {user.lastName}</div>
+                      <div className="user-id">ID: {user.id}</div>
+                    </div>
+                  </td>
+                  <td>{user.email}</td>
+                  <td>
+                    <span className="category-badge">
+                      {getCategoryIcon(user.category)} {user.category}
+                    </span>
+                  </td>
+                  <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
+                  <td className="actions-cell">
+                    <button 
+                      className="action-btn edit"
+                      onClick={() => setSelectedUser(user)}
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      className="action-btn delete"
+                      onClick={() => handleDeleteUser(user.id)}
+                      title="Delete"
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
+                  {searchTerm ? `No users found matching "${searchTerm}"` : 'No users found'}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -272,7 +320,7 @@ const AdminUsers = () => {
             </div>
             <form onSubmit={handleAddUser}>
               <div className="form-group">
-                <label>First Name</label>
+                <label>First Name *</label>
                 <input
                   type="text"
                   required
@@ -281,7 +329,7 @@ const AdminUsers = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Last Name</label>
+                <label>Last Name *</label>
                 <input
                   type="text"
                   required
@@ -290,7 +338,7 @@ const AdminUsers = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Email</label>
+                <label>Email *</label>
                 <input
                   type="email"
                   required
@@ -299,7 +347,7 @@ const AdminUsers = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Category</label>
+                <label>Category *</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
@@ -310,7 +358,7 @@ const AdminUsers = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>Password</label>
+                <label>Password *</label>
                 <input
                   type="password"
                   required
@@ -335,16 +383,13 @@ const AdminUsers = () => {
               <h2>Edit User</h2>
               <button className="close-btn" onClick={() => setSelectedUser(null)}>✕</button>
             </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              // Handle update
-              setSelectedUser(null);
-            }}>
+            <form onSubmit={handleUpdateUser}>
               <div className="form-group">
                 <label>First Name</label>
                 <input
                   type="text"
-                  value={selectedUser.firstName}
+                  required
+                  value={selectedUser.firstName || ''}
                   onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
                 />
               </div>
@@ -352,7 +397,8 @@ const AdminUsers = () => {
                 <label>Last Name</label>
                 <input
                   type="text"
-                  value={selectedUser.lastName}
+                  required
+                  value={selectedUser.lastName || ''}
                   onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
                 />
               </div>
@@ -360,9 +406,21 @@ const AdminUsers = () => {
                 <label>Email</label>
                 <input
                   type="email"
-                  value={selectedUser.email}
+                  required
+                  value={selectedUser.email || ''}
                   onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
                 />
+              </div>
+              <div className="form-group">
+                <label>Category</label>
+                <select
+                  value={selectedUser.category || 'student'}
+                  onChange={(e) => setSelectedUser({...selectedUser, category: e.target.value})}
+                >
+                  <option value="student">Student</option>
+                  <option value="tutor">Tutor</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setSelectedUser(null)}>Cancel</button>
@@ -376,7 +434,7 @@ const AdminUsers = () => {
   );
 };
 
-// Mock data for demonstration
+// Mock data for demonstration (fallback only)
 const mockUsers = [
   {
     id: 1,
@@ -384,7 +442,6 @@ const mockUsers = [
     lastName: 'Mokoena',
     email: 'thabo.mokoena@example.com',
     category: 'student',
-    status: 'active',
     createdAt: '2024-01-15T10:00:00Z'
   },
   {
@@ -393,7 +450,6 @@ const mockUsers = [
     lastName: 'Johnson',
     email: 'sarah.johnson@example.com',
     category: 'tutor',
-    status: 'active',
     createdAt: '2024-01-10T09:00:00Z'
   },
   {
@@ -402,7 +458,6 @@ const mockUsers = [
     lastName: 'Smith',
     email: 'mike.smith@example.com',
     category: 'admin',
-    status: 'active',
     createdAt: '2024-01-05T08:00:00Z'
   },
   {
@@ -411,7 +466,6 @@ const mockUsers = [
     lastName: 'Ndlovu',
     email: 'lerato.ndlovu@example.com',
     category: 'student',
-    status: 'suspended',
     createdAt: '2024-01-20T11:00:00Z'
   }
 ];

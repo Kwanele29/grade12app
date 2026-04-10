@@ -41,6 +41,9 @@ public class User {
     
     private String category;
     
+    @Column(name = "status")
+    private String status = "active";
+    
     @Column(name = "reset_token")
     private String resetToken;
     
@@ -70,6 +73,9 @@ public class User {
         lastNotificationCheck = LocalDateTime.now();
         if (notificationEnabled == null) {
             notificationEnabled = true;
+        }
+        if (status == null) {
+            status = "active";
         }
     }
     
@@ -108,6 +114,9 @@ public class User {
     
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     
     public String getResetToken() { return resetToken; }
     public void setResetToken(String resetToken) { this.resetToken = resetToken; }
