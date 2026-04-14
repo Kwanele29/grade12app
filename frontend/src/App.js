@@ -12,8 +12,6 @@ import Subjects from './components/student/Subjects';
 import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminUsers from './components/admin/AdminUsers';
-import AdminContent from './components/admin/AdminContent';
-import AdminReports from './components/admin/AdminReports';
 import AdminSettings from './components/admin/AdminSettings';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
@@ -223,20 +221,6 @@ function App() {
                     <Route path="/admin/users" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminUsers />
-                        </ProtectedRoute>
-                    } />
-                    
-                    {/* Admin Content Management */}
-                    <Route path="/admin/content" element={
-                        <ProtectedRoute allowedRoles={['admin']}>
-                            <AdminContent />
-                        </ProtectedRoute>
-                    } />
-                    
-                    {/* Admin Reports & Analytics */}
-                    <Route path="/admin/reports" element={
-                        <ProtectedRoute allowedRoles={['admin']}>
-                            <AdminReports />
                         </ProtectedRoute>
                     } />
                     

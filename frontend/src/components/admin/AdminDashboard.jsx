@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminDashboard.css';
 import AdminUsers from './AdminUsers';
-import AdminContent from './AdminContent';
-import AdminReports from './AdminReports';
 import AdminSettings from './AdminSettings';
 
 const AdminDashboard = () => {
@@ -46,10 +44,6 @@ const AdminDashboard = () => {
       setActiveMenu('dashboard');
     } else if (path === '/admin/users') {
       setActiveMenu('users');
-    } else if (path === '/admin/content') {
-      setActiveMenu('content');
-    } else if (path === '/admin/reports') {
-      setActiveMenu('reports');
     } else if (path === '/admin/settings') {
       setActiveMenu('settings');
     }
@@ -88,12 +82,6 @@ const AdminDashboard = () => {
       case 'users':
         navigate('/admin/users');
         break;
-      case 'content':
-        navigate('/admin/content');
-        break;
-      case 'reports':
-        navigate('/admin/reports');
-        break;
       case 'settings':
         navigate('/admin/settings');
         break;
@@ -109,10 +97,6 @@ const AdminDashboard = () => {
     switch(path) {
       case '/admin/users':
         return <AdminUsers />;
-      case '/admin/content':
-        return <AdminContent />;
-      case '/admin/reports':
-        return <AdminReports />;
       case '/admin/settings':
         return <AdminSettings />;
       default:
@@ -164,18 +148,6 @@ const AdminDashboard = () => {
                   <p>Create student, tutor, or admin account</p>
                 </button>
 
-                <button className="action-card" onClick={() => handleMenuClick('content')}>
-                  <span className="action-icon">📚</span>
-                  <h3>Manage Content</h3>
-                  <p>Upload materials and create quizzes</p>
-                </button>
-
-                <button className="action-card" onClick={() => handleMenuClick('reports')}>
-                  <span className="action-icon">📊</span>
-                  <h3>View Reports</h3>
-                  <p>Access detailed analytics and insights</p>
-                </button>
-
                 <button className="action-card" onClick={() => handleMenuClick('settings')}>
                   <span className="action-icon">⚙️</span>
                   <h3>System Settings</h3>
@@ -217,10 +189,6 @@ const AdminDashboard = () => {
     switch(path) {
       case '/admin/users':
         return 'User Management';
-      case '/admin/content':
-        return 'Content Management';
-      case '/admin/reports':
-        return 'Reports & Analytics';
       case '/admin/settings':
         return 'System Settings';
       default:
@@ -234,10 +202,6 @@ const AdminDashboard = () => {
     switch(path) {
       case '/admin/users':
         return 'Manage students, tutors, and administrators';
-      case '/admin/content':
-        return 'Manage study materials, quizzes, and resources';
-      case '/admin/reports':
-        return 'View system analytics and reports';
       case '/admin/settings':
         return 'Configure system settings and preferences';
       default:
@@ -276,22 +240,6 @@ const AdminDashboard = () => {
           >
             <span className="menu-icon">👥</span>
             <span className="menu-text">Users</span>
-          </button>
-
-          <button 
-            className={`sidebar-menu-item ${activeMenu === 'content' ? 'active' : ''}`}
-            onClick={() => handleMenuClick('content')}
-          >
-            <span className="menu-icon">📚</span>
-            <span className="menu-text">Content</span>
-          </button>
-
-          <button 
-            className={`sidebar-menu-item ${activeMenu === 'reports' ? 'active' : ''}`}
-            onClick={() => handleMenuClick('reports')}
-          >
-            <span className="menu-icon">📈</span>
-            <span className="menu-text">Reports</span>
           </button>
 
           <button 
