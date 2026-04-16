@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminDashboard.css';
 import AdminUsers from './AdminUsers';
+import AdminReports from './AdminReports';
 import AdminSettings from './AdminSettings';
 
 const AdminDashboard = () => {
@@ -9,12 +10,13 @@ const AdminDashboard = () => {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [allUsers, setAllUsers] = useState([]);
   const [stats, setStats] = useState({
-    totalStudents: 1247,
-    totalTutors: 89,
-    totalAdmins: 5,
+    totalStudents: 0,
+    totalTutors: 0,
+    totalAdmins: 0,
     activeSessions: 345,
-    newUsersToday: 28,
+    newUsersToday: 0,
     pendingApprovals: 12
   });
 
@@ -34,6 +36,7 @@ const AdminDashboard = () => {
     }
     
     setUser(parsedUser);
+    fetchAllUsers();
     fetchAdminStats();
   }, [navigate]);
 
@@ -44,10 +47,49 @@ const AdminDashboard = () => {
       setActiveMenu('dashboard');
     } else if (path === '/admin/users') {
       setActiveMenu('users');
+    } else if (path === '/admin/reports') {
+      setActiveMenu('reports');
     } else if (path === '/admin/settings') {
       setActiveMenu('settings');
     }
   }, [location]);
+
+  const fetchAllUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const usersData = Array.isArray(data) ? data : (data.users || data.data || []);
+        setAllUsers(usersData);
+        
+        const students = usersData.filter(u => u.category === 'student').length;
+        const tutors = usersData.filter(u => u.category === 'tutor').length;
+        const admins = usersData.filter(u => u.category === 'admin').length;
+        
+        const today = new Date();
+        const newToday = usersData.filter(user => {
+          if (!user.createdAt) return false;
+          const createdDate = new Date(user.createdAt);
+          return createdDate.toDateString() === today.toDateString();
+        }).length;
+        
+        setStats(prev => ({
+          ...prev,
+          totalStudents: students,
+          totalTutors: tutors,
+          totalAdmins: admins,
+          newUsersToday: newToday
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   const fetchAdminStats = async () => {
     try {
@@ -59,7 +101,7 @@ const AdminDashboard = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
+        setStats(prev => ({ ...prev, ...data }));
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -82,12 +124,22 @@ const AdminDashboard = () => {
       case 'users':
         navigate('/admin/users');
         break;
+      case 'reports':
+        navigate('/admin/reports');
+        break;
       case 'settings':
         navigate('/admin/settings');
         break;
       default:
         break;
     }
+  };
+
+  // Get recent users (last 5)
+  const getRecentUsers = () => {
+    return [...allUsers]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5);
   };
 
   // Function to render the main content based on the current route
@@ -97,85 +149,123 @@ const AdminDashboard = () => {
     switch(path) {
       case '/admin/users':
         return <AdminUsers />;
+      case '/admin/reports':
+        return <AdminReports />;
       case '/admin/settings':
         return <AdminSettings />;
       default:
         return (
           <>
+            {/* Welcome Banner */}
+            <div className="welcome-banner">
+              <div className="welcome-text">
+                <h2>Welcome back, {user?.firstName}! 👋</h2>
+                <p>Here's what's happening with your platform today.</p>
+              </div>
+              <div className="stats-date">
+                📅 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+            </div>
+
             {/* Stats Grid */}
             <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">👥</div>
+              <div className="stat-card clickable" onClick={() => handleMenuClick('users')}>
+                <div className="stat-icon">👨‍🎓</div>
                 <div className="stat-details">
                   <h3>Total Students</h3>
                   <p className="stat-number">{stats.totalStudents}</p>
-                  <span className="stat-trend positive">+{stats.newUsersToday} today</span>
+                  <span className="stat-trend">From database</span>
                 </div>
               </div>
 
-              <div className="stat-card">
+              <div className="stat-card clickable" onClick={() => handleMenuClick('users')}>
                 <div className="stat-icon">👨‍🏫</div>
                 <div className="stat-details">
                   <h3>Total Tutors</h3>
                   <p className="stat-number">{stats.totalTutors}</p>
+                  <span className="stat-trend">From database</span>
                 </div>
               </div>
 
-              <div className="stat-card">
+              <div className="stat-card clickable" onClick={() => handleMenuClick('users')}>
                 <div className="stat-icon">👑</div>
                 <div className="stat-details">
                   <h3>Administrators</h3>
                   <p className="stat-number">{stats.totalAdmins}</p>
+                  <span className="stat-trend">From database</span>
                 </div>
               </div>
 
               <div className="stat-card">
-                <div className="stat-icon">🟢</div>
+                <div className="stat-icon">📈</div>
                 <div className="stat-details">
-                  <h3>Active Sessions</h3>
-                  <p className="stat-number">{stats.activeSessions}</p>
+                  <h3>Total Users</h3>
+                  <p className="stat-number">{allUsers.length}</p>
+                  <span className="stat-trend positive">+{stats.newUsersToday} today</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Recent Users Section */}
+            <div className="recent-users-card">
+              <div className="card-header">
+                <h3>🆕 Recently Joined Users</h3>
+                <button className="view-all-link" onClick={() => handleMenuClick('users')}>
+                  View All →
+                </button>
+              </div>
+              <div className="recent-users-list">
+                {getRecentUsers().length > 0 ? (
+                  getRecentUsers().map(user => (
+                    <div key={user.id} className="recent-user-item">
+                      <div className="user-avatar-small">
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </div>
+                      <div className="user-details">
+                        <div className="user-name">{user.firstName} {user.lastName}</div>
+                        <div className="user-email">{user.email}</div>
+                      </div>
+                      <div className={`user-category category-${user.category}`}>
+                        {user.category === 'student' && '👨‍🎓'}
+                        {user.category === 'tutor' && '👨‍🏫'}
+                        {user.category === 'admin' && '👑'}
+                        {user.category}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-data">No users found in database</p>
+                )}
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="quick-actions">
-              <h2>Quick Actions</h2>
+            <div className="quick-actions-section">
+              <h3>⚡ Quick Actions</h3>
               <div className="actions-grid">
                 <button className="action-card" onClick={() => handleMenuClick('users')}>
                   <span className="action-icon">➕</span>
-                  <h3>Add New User</h3>
+                  <h4>Add New User</h4>
                   <p>Create student, tutor, or admin account</p>
+                </button>
+
+                <button className="action-card" onClick={() => handleMenuClick('users')}>
+                  <span className="action-icon">👥</span>
+                  <h4>Manage Users</h4>
+                  <p>View, edit, or remove user accounts</p>
+                </button>
+
+                <button className="action-card" onClick={() => handleMenuClick('reports')}>
+                  <span className="action-icon">📊</span>
+                  <h4>View Reports</h4>
+                  <p>Access user analytics and insights</p>
                 </button>
 
                 <button className="action-card" onClick={() => handleMenuClick('settings')}>
                   <span className="action-icon">⚙️</span>
-                  <h3>System Settings</h3>
+                  <h4>System Settings</h4>
                   <p>Configure platform preferences</p>
                 </button>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="recent-activity">
-              <h2>Recent Activity</h2>
-              <div className="activity-list">
-                <div className="activity-item">
-                  <span className="activity-time">2 min ago</span>
-                  <span className="activity-text">New user registered: Thabo Mokoena (Student)</span>
-                </div>
-                <div className="activity-item">
-                  <span className="activity-time">15 min ago</span>
-                  <span className="activity-text">Exam paper uploaded: Mathematics P1 2023</span>
-                </div>
-                <div className="activity-item">
-                  <span className="activity-time">1 hour ago</span>
-                  <span className="activity-text">Tutor application approved: Sarah Johnson</span>
-                </div>
-                <div className="activity-item">
-                  <span className="activity-time">3 hours ago</span>
-                  <span className="activity-text">System backup completed successfully</span>
-                </div>
               </div>
             </div>
           </>
@@ -189,6 +279,8 @@ const AdminDashboard = () => {
     switch(path) {
       case '/admin/users':
         return 'User Management';
+      case '/admin/reports':
+        return 'Reports & Analytics';
       case '/admin/settings':
         return 'System Settings';
       default:
@@ -202,6 +294,8 @@ const AdminDashboard = () => {
     switch(path) {
       case '/admin/users':
         return 'Manage students, tutors, and administrators';
+      case '/admin/reports':
+        return 'View user analytics, growth trends, and insights';
       case '/admin/settings':
         return 'Configure system settings and preferences';
       default:
@@ -240,6 +334,14 @@ const AdminDashboard = () => {
           >
             <span className="menu-icon">👥</span>
             <span className="menu-text">Users</span>
+          </button>
+
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'reports' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('reports')}
+          >
+            <span className="menu-icon">📈</span>
+            <span className="menu-text">Reports</span>
           </button>
 
           <button 

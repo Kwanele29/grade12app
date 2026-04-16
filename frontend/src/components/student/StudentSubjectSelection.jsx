@@ -10,17 +10,22 @@ const StudentSubjectSelection = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // ALL SUBJECTS MATCHING YOUR DATABASE EXACTLY
   const availableSubjects = [
     { id: 1, name: 'Mathematics', icon: '📐', color: '#3b82f6', bgColor: '#eff6ff', category: 'Core' },
     { id: 2, name: 'Mathematical Literacy', icon: '🧮', color: '#f97316', bgColor: '#fff7ed', category: 'Core' },
     { id: 3, name: 'Physical Science', icon: '⚛️', color: '#10b981', bgColor: '#f0fdf4', category: 'Core' },
-    { id: 4, name: 'Life Sciences', icon: '🧬', color: '#8b5cf6', bgColor: '#f5f3ff', category: 'Core' },
-    { id: 5, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fef3c7', category: 'Core' },
-    { id: 6, name: 'Geography', icon: '🌍', color: '#ec4899', bgColor: '#fdf2f8', category: 'Humanities' },
-    { id: 7, name: 'History', icon: '📜', color: '#a855f7', bgColor: '#f3e8ff', category: 'Humanities' },
-    { id: 8, name: 'Accounting', icon: '💰', color: '#14b8a6', bgColor: '#e0f2fe', category: 'Commerce' },
-    { id: 9, name: 'Business Studies', icon: '💼', color: '#f43f5e', bgColor: '#fce7f3', category: 'Commerce' },
-    { id: 10, name: 'Tourism', icon: '✈️', color: '#06b6d4', bgColor: '#e0f2fe', category: 'Consumer' },
+    { id: 4, name: 'English', icon: '📝', color: '#f59e0b', bgColor: '#fef3c7', category: 'Core' },
+    { id: 5, name: 'Tourism', icon: '✈️', color: '#06b6d4', bgColor: '#e0f2fe', category: 'Consumer Studies' },
+    { id: 6, name: 'Life Sciences', icon: '🧬', color: '#8b5cf6', bgColor: '#f5f3ff', category: 'Core' },
+    { id: 7, name: 'Geography', icon: '🌍', color: '#ec4899', bgColor: '#fdf2f8', category: 'Humanities' },
+    { id: 19, name: 'Consumer Studies', icon: '🛍️', color: '#d946ef', bgColor: '#fae8ff', category: 'Consumer Studies' },
+    { id: 20, name: 'Hospitality Studies', icon: '🍽️', color: '#f97316', bgColor: '#fff7ed', category: 'Consumer Studies' },
+    { id: 21, name: 'Visual Arts', icon: '🎨', color: '#a855f7', bgColor: '#f3e8ff', category: 'Arts' },
+    { id: 22, name: 'Dramatic Arts', icon: '🎭', color: '#ec4899', bgColor: '#fdf2f8', category: 'Arts' },
+    { id: 23, name: 'Music', icon: '🎵', color: '#f59e0b', bgColor: '#fef3c7', category: 'Arts' },
+    { id: 24, name: 'Agricultural Sciences', icon: '🌾', color: '#84cc16', bgColor: '#fefce8', category: 'Sciences' },
+    { id: 25, name: 'Technical Sciences', icon: '🔧', color: '#0ea5e9', bgColor: '#f0f9ff', category: 'Sciences' }
   ];
 
   useEffect(() => {
@@ -42,7 +47,14 @@ const StudentSubjectSelection = () => {
       setUser(parsedUser);
       
       // Check if student already has subjects
-      fetchStudentSubjects(parsedUser.id, token);
+      const savedSubjects = localStorage.getItem(`student_subjects_${parsedUser.id}`);
+      if (savedSubjects) {
+        const subjects = JSON.parse(savedSubjects);
+        if (subjects && subjects.length > 0) {
+          navigate('/student-dashboard');
+          return;
+        }
+      }
     } catch (error) {
       console.error('Error parsing user data:', error);
       navigate('/login');
@@ -50,24 +62,6 @@ const StudentSubjectSelection = () => {
       setLoading(false);
     }
   }, [navigate]);
-
-  const fetchStudentSubjects = async (studentId, token) => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/student/subjects/${studentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const existingSubjects = await response.json();
-        if (existingSubjects && existingSubjects.length > 0) {
-          // Student already has subjects, redirect to dashboard
-          navigate('/student-dashboard');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching student subjects:', error);
-    }
-  };
 
   const handleSubjectToggle = (subject) => {
     setSelectedSubjects(prev => {
@@ -105,6 +99,7 @@ const StudentSubjectSelection = () => {
       
       if (response.ok) {
         localStorage.setItem(`student_subjects_${user.id}`, JSON.stringify(selectedSubjects));
+        alert(`Successfully selected ${selectedSubjects.length} subjects!`);
         navigate('/student-dashboard');
       } else {
         const error = await response.text();
@@ -112,7 +107,7 @@ const StudentSubjectSelection = () => {
       }
     } catch (error) {
       console.error('Error saving subjects:', error);
-      alert('Error saving subjects');
+      alert('Error saving subjects: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -122,6 +117,7 @@ const StudentSubjectSelection = () => {
     navigate('/student-dashboard');
   };
 
+  // Group subjects by category
   const groupedSubjects = availableSubjects.reduce((acc, subject) => {
     if (!acc[subject.category]) {
       acc[subject.category] = [];
@@ -134,7 +130,7 @@ const StudentSubjectSelection = () => {
     ? availableSubjects.filter(subject => 
         subject.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : availableSubjects;
+    : [];
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -144,7 +140,7 @@ const StudentSubjectSelection = () => {
         <div className="selection-header">
           <div className="header-icon">👨‍🎓</div>
           <h1>Welcome, {user?.firstName || 'Student'}!</h1>
-          <p>Select the subjects you'll be studying</p>
+          <p>Select the subjects you'll be studying (you can select multiple)</p>
         </div>
 
         <div className="search-section">
@@ -237,7 +233,7 @@ const StudentSubjectSelection = () => {
             onClick={handleConfirmSubjects}
             disabled={selectedSubjects.length === 0 || saving}
           >
-            {saving ? 'Saving...' : 'Continue to Dashboard →'}
+            {saving ? 'Saving...' : `Confirm ${selectedSubjects.length} Subject${selectedSubjects.length !== 1 ? 's' : ''} →`}
           </button>
         </div>
       </div>

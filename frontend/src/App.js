@@ -13,6 +13,7 @@ import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminUsers from './components/admin/AdminUsers';
 import AdminSettings from './components/admin/AdminSettings';
+import AdminReports from './components/admin/AdminReports';
 import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
 import TestQuizzes from './components/student/TestQuizzes';
@@ -221,6 +222,13 @@ function App() {
                     <Route path="/admin/users" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminUsers />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin Reports & Analytics */}
+                    <Route path="/admin/reports" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminReports />
                         </ProtectedRoute>
                     } />
                     

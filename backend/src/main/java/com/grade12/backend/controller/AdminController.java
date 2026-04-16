@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -24,20 +25,24 @@ public class AdminController {
     
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // GET all users
+    // GET all users (excluding soft deleted)
     @GetMapping("/users")
     public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userRepository.findAll();
+        List<User> allUsers = userRepository.findAll();
+        // Filter out soft deleted users
+        List<User> activeUsers = allUsers.stream()
+                .filter(user -> !user.isDeleted())
+                .collect(Collectors.toList());
         // Remove passwords from response for security
-        users.forEach(user -> user.setPassword(null));
-        return ResponseEntity.ok(users);
+        activeUsers.forEach(user -> user.setPassword(null));
+        return ResponseEntity.ok(activeUsers);
     }
 
     // GET single user by ID
     @GetMapping("/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         Optional<User> user = userRepository.findById(id);
-        if (user.isPresent()) {
+        if (user.isPresent() && !user.get().isDeleted()) {
             user.get().setPassword(null);
             return ResponseEntity.ok(user.get());
         } else {
@@ -52,9 +57,9 @@ public class AdminController {
         try {
             String email = userData.get("email");
             
-            // Check if user already exists
+            // Check if user already exists and not deleted
             Optional<User> existingUser = userRepository.findByEmail(email);
-            if (existingUser.isPresent()) {
+            if (existingUser.isPresent() && !existingUser.get().isDeleted()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "User with this email already exists"));
             }
@@ -68,6 +73,7 @@ public class AdminController {
             user.setCategory(userData.get("category"));
             user.setCreatedAt(LocalDateTime.now());
             user.setUpdatedAt(LocalDateTime.now());
+            user.setDeleted(false);
             
             User savedUser = userRepository.save(user);
             savedUser.setPassword(null);
@@ -85,7 +91,7 @@ public class AdminController {
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, String> userData) {
         try {
             Optional<User> existingUser = userRepository.findById(id);
-            if (!existingUser.isPresent()) {
+            if (!existingUser.isPresent() || existingUser.get().isDeleted()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "User not found"));
             }
@@ -108,17 +114,22 @@ public class AdminController {
         }
     }
 
-    // DELETE user
+    // DELETE user (Soft Delete - just mark as deleted)
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
             Optional<User> user = userRepository.findById(id);
-            if (!user.isPresent()) {
+            if (!user.isPresent() || user.get().isDeleted()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "User not found"));
             }
             
-            userRepository.deleteById(id);
+            // Soft delete - just mark as deleted
+            User userToDelete = user.get();
+            userToDelete.setDeleted(true);
+            userToDelete.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(userToDelete);
+            
             return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
         } catch (Exception e) {
             e.printStackTrace();

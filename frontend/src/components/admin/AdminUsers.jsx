@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './AdminUsers.css';
 
 const AdminUsers = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -54,6 +56,7 @@ const AdminUsers = () => {
             'Authorization': `Bearer ${token}`
           }
         });
+        
         if (response.ok) {
           setUsers(users.filter(user => user.id !== userId));
           alert('User deleted successfully');
@@ -79,6 +82,7 @@ const AdminUsers = () => {
         },
         body: JSON.stringify(formData)
       });
+      
       if (response.ok) {
         const newUser = await response.json();
         const userData = newUser.user || newUser.data || newUser;
@@ -118,6 +122,7 @@ const AdminUsers = () => {
           category: selectedUser.category
         })
       });
+      
       if (response.ok) {
         const updatedUser = await response.json();
         const userData = updatedUser.user || updatedUser.data || updatedUser;
@@ -133,41 +138,30 @@ const AdminUsers = () => {
     }
   };
 
-  // Handle search input change
   const handleSearchChange = (e) => {
-    console.log('Search input changed:', e.target.value);
     setSearchTerm(e.target.value);
   };
 
   const getFilteredUsers = () => {
     let filtered = users;
     
-    // Apply category filter
     if (filter !== 'all') {
       filtered = filtered.filter(user => user.category === filter);
     }
     
-    // Apply search filter
     if (searchTerm.trim() !== '') {
       const searchLower = searchTerm.toLowerCase().trim();
-      console.log('Searching for:', searchLower);
       filtered = filtered.filter(user => {
         const firstName = (user.firstName || '').toLowerCase();
         const lastName = (user.lastName || '').toLowerCase();
         const email = (user.email || '').toLowerCase();
         const fullName = (firstName + ' ' + lastName).toLowerCase();
         
-        const matches = firstName.includes(searchLower) ||
+        return firstName.includes(searchLower) ||
                lastName.includes(searchLower) ||
                fullName.includes(searchLower) ||
                email.includes(searchLower);
-        
-        if (matches) {
-          console.log('Found match:', user.firstName, user.lastName);
-        }
-        return matches;
       });
-      console.log('Filtered users count:', filtered.length);
     }
     
     return filtered;
@@ -182,12 +176,54 @@ const AdminUsers = () => {
     }
   };
 
+  // Function to go back to admin dashboard
+  const goToAdminDashboard = () => {
+    console.log('Navigating to admin dashboard...');
+    navigate('/admin-dashboard');
+  };
+
   if (loading) {
     return <div className="loading-users">Loading users from database...</div>;
   }
 
   return (
     <div className="admin-users">
+      {/* BACK BUTTON - Top Left */}
+      <div style={{ 
+        marginBottom: '20px', 
+        padding: '10px 0',
+        position: 'relative',
+        zIndex: 100
+      }}>
+        <button 
+          onClick={goToAdminDashboard}
+          style={{
+            backgroundColor: '#1F2833',
+            border: '2px solid #66FCF1',
+            color: '#66FCF1',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#66FCF1';
+            e.target.style.color = '#0B0C10';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#1F2833';
+            e.target.style.color = '#66FCF1';
+          }}
+        >
+          ← Back to Dashboard
+        </button>
+      </div>
+
       <div className="users-header">
         <div>
           <h1>User Management</h1>
@@ -229,24 +265,11 @@ const AdminUsers = () => {
         <div className="search-box">
           <input
             type="text"
-            id="user-search-input"
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={handleSearchChange}
-            onClick={() => console.log('Search input clicked')}
-            onFocus={() => console.log('Search input focused')}
-            style={{ 
-              padding: '10px 40px 10px 16px',
-              border: '1px solid rgba(102, 252, 241, 0.2)',
-              borderRadius: '8px',
-              background: '#1F2833',
-              color: '#C5C6C7',
-              width: '280px'
-            }}
           />
-          <span className="search-icon" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
-            🔍
-          </span>
+          <span className="search-icon">🔍</span>
         </div>
       </div>
 

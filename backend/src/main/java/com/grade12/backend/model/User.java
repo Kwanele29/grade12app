@@ -44,6 +44,9 @@ public class User {
     @Column(name = "status")
     private String status = "active";
     
+    @Column(name = "deleted")
+    private boolean deleted = false;
+    
     @Column(name = "reset_token")
     private String resetToken;
     
@@ -76,6 +79,9 @@ public class User {
         }
         if (status == null) {
             status = "active";
+        }
+        if (!deleted) {
+            deleted = false;
         }
     }
     
@@ -117,6 +123,9 @@ public class User {
     
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
     
     public String getResetToken() { return resetToken; }
     public void setResetToken(String resetToken) { this.resetToken = resetToken; }
