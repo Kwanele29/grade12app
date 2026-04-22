@@ -44,7 +44,8 @@ public class SecurityConfig {
                     "/login/**",         // Login page
                     "/api/subjects/**",  // Subjects endpoints (for student registration)
                     "/api/materials/**", // Materials endpoints (for file access)
-                    "/uploads/**"        // Uploaded files directory
+                    "/uploads/**",       // Uploaded files directory
+                    "/api/quizzes/submit"  // ADDED: Allow quiz submission
                 ).permitAll()
                 // ALL OTHER ENDPOINTS REQUIRE AUTHENTICATION
                 .anyRequest().authenticated()

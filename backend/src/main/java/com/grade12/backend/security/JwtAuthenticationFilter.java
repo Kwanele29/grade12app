@@ -31,17 +31,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
-
-        System.out.println("=== JWT FILTER ===");
-        System.out.println("Request URI: " + request.getRequestURI());
+        final String requestPath = request.getRequestURI();
         
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("No Bearer token found, continuing filter chain");
+        System.out.println("=== JWT FILTER ===");
+        System.out.println("Request URI: " + requestPath);
+        
+        // ALLOW QUIZ SUBMIT ENDPOINT WITHOUT AUTHENTICATION
+        if (requestPath.equals("/api/quizzes/submit")) {
+            System.out.println("✅ Quiz submit endpoint - allowing access without authentication");
             filterChain.doFilter(request, response);
             return;
         }
+        
+        // ALLOW OTHER PUBLIC ENDPOINTS
+        if (requestPath.startsWith("/api/auth/") || 
+            requestPath.startsWith("/oauth2/") || 
+            requestPath.startsWith("/login/") ||
+            requestPath.equals("/api/subjects") ||
+            requestPath.startsWith("/api/materials/")) {
+            System.out.println("✅ Public endpoint - allowing access");
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("❌ No Bearer token found for protected endpoint");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Authentication required");
+            return;
+        }
+
+        final String jwt;
+        final String userEmail;
 
         jwt = authHeader.substring(7);
         System.out.println("Token found: " + jwt.substring(0, Math.min(50, jwt.length())) + "...");
@@ -62,15 +83,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("Authentication set for: " + userEmail);
+                    System.out.println("✅ Authentication set for: " + userEmail);
                 } else {
-                    System.out.println("Token is invalid for: " + userEmail);
+                    System.out.println("❌ Token is invalid for: " + userEmail);
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Invalid token");
+                    return;
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error in JWT filter: " + e.getMessage());
+            System.err.println("❌ Error in JWT filter: " + e.getMessage());
             e.printStackTrace();
-            // Don't throw exception, just continue without authentication
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Authentication error: " + e.getMessage());
+            return;
         }
         
         filterChain.doFilter(request, response);

@@ -119,7 +119,9 @@ const Quizzes = () => {
   };
 
   const handleAnswerSelect = (questionId, optionIndex) => {
-    setSelectedAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
+    // Convert 0-based index to 1-based for backend (A=1, B=2, C=3, D=4)
+    const backendOptionValue = optionIndex + 1;
+    setSelectedAnswers(prev => ({ ...prev, [questionId]: backendOptionValue }));
   };
 
   const handleNextQuestion = () => {
@@ -135,22 +137,44 @@ const Quizzes = () => {
   const handleSubmitQuiz = async () => {
     setTimerActive(false);
     
+    // Check if all questions are answered
+    const totalQuestions = selectedQuiz.questions.length;
+    const answeredCount = Object.keys(selectedAnswers).length;
+    
+    if (answeredCount !== totalQuestions) {
+      const confirmSubmit = window.confirm(`You have answered ${answeredCount} out of ${totalQuestions} questions. Are you sure you want to submit?`);
+      if (!confirmSubmit) {
+        setTimerActive(true);
+        return;
+      }
+    }
+    
     try {
       const token = localStorage.getItem('token');
+      
+      // Prepare submission data
+      const submissionData = {
+        studentId: user.id,
+        quizId: selectedQuiz.id,
+        answers: selectedAnswers
+      };
+      
+      console.log('Submitting quiz:', submissionData);
+      
       const response = await fetch('http://localhost:8080/api/quizzes/submit', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          studentId: user.id,
-          quizId: selectedQuiz.id,
-          answers: selectedAnswers
-        })
+        body: JSON.stringify(submissionData)
       });
       
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
       
       const result = await response.json();
       console.log('Quiz result:', result);
@@ -206,7 +230,8 @@ const Quizzes = () => {
 
   const isCurrentQuestionAnswered = () => {
     if (!selectedQuiz) return false;
-    return selectedAnswers[selectedQuiz.questions[currentQuestion].id] !== undefined;
+    const currentQ = selectedQuiz.questions[currentQuestion];
+    return selectedAnswers[currentQ.id] !== undefined;
   };
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -296,7 +321,7 @@ const Quizzes = () => {
                     </div>
                     <div className="meta-item">
                       <span className="meta-label">Difficulty</span>
-                      <span className={`difficulty-badge ${quiz.difficulty.toLowerCase()}`}>{quiz.difficulty}</span>
+                      <span className={`difficulty-badge ${quiz.difficulty?.toLowerCase() || 'medium'}`}>{quiz.difficulty || 'Medium'}</span>
                     </div>
                   </div>
                   <button className="start-quiz-btn" onClick={() => handleStartQuiz(quiz)} style={{ background: quiz.subjectColor }}>
@@ -373,7 +398,9 @@ const Quizzes = () => {
                 selectedQuiz.questions[currentQuestion].optionD
               ].map((option, index) => {
                 const questionId = selectedQuiz.questions[currentQuestion].id;
-                const isSelected = selectedAnswers[questionId] === index;
+                const selectedValue = selectedAnswers[questionId];
+                // Convert backend value (1-4) to index (0-3) for display
+                const isSelected = selectedValue === (index + 1);
                 return (
                   <button 
                     key={index} 
@@ -400,16 +427,11 @@ const Quizzes = () => {
             {currentQuestion === selectedQuiz.questions.length - 1 ? (
               <button 
                 className="nav-btn submit" 
-                onClick={handleSubmitQuiz} 
-                disabled={Object.keys(selectedAnswers).length !== selectedQuiz.questions.length}
+                onClick={handleSubmitQuiz}
                 style={{
-                  background: Object.keys(selectedAnswers).length === selectedQuiz.questions.length 
-                    ? selectedQuiz.subjectColor 
-                    : '#C5C6C7',
-                  cursor: Object.keys(selectedAnswers).length === selectedQuiz.questions.length 
-                    ? 'pointer' 
-                    : 'not-allowed',
-                  opacity: Object.keys(selectedAnswers).length === selectedQuiz.questions.length ? 1 : 0.6
+                  background: selectedQuiz.subjectColor,
+                  cursor: 'pointer',
+                  opacity: 1
                 }}
               >
                 Submit Quiz

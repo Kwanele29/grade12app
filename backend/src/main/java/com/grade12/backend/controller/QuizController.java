@@ -7,6 +7,7 @@ import com.grade12.backend.model.User;
 import com.grade12.backend.repository.UserRepository;
 import com.grade12.backend.repository.StudentSubjectRepository;
 import com.grade12.backend.service.QuizService;
+import com.grade12.backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,8 +27,9 @@ public class QuizController {
     private final QuizService quizService;
     private final UserRepository userRepository;
     private final StudentSubjectRepository studentSubjectRepository;
-    
-    // ==================== TUTOR QUIZ ENDPOINTS (YOUR WORKING CODE) ====================
+    private final EmailService emailService;
+
+    // ==================== TUTOR QUIZ ENDPOINTS ====================
     
     @PostMapping("/upload")
     public ResponseEntity<?> uploadQuiz(@RequestBody QuizUploadDTO uploadDTO) {
@@ -121,8 +123,40 @@ public class QuizController {
             
             QuizResultDTO result = quizService.submitQuiz(submission);
             
-            System.out.println("Result: " + result.getPercentage() + "%");
+            System.out.println("Obtained Marks: " + result.getObtainedMarks());
+            System.out.println("Total Marks: " + result.getTotalMarks());
+            System.out.println("Percentage: " + result.getPercentage() + "%");
             System.out.println("=====================");
+            
+            // SEND EMAIL NOTIFICATION TO STUDENT
+            try {
+                User student = userRepository.findById(submission.getStudentId()).orElse(null);
+                if (student != null && student.getEmail() != null && !student.getEmail().isEmpty()) {
+                    // Get quiz details for email
+                    Quiz quiz = quizService.getQuizById(submission.getQuizId());
+                    if (quiz != null) {
+                        emailService.sendQuizCompletionEmail(
+                            student.getEmail(),
+                            student.getFirstName() + " " + student.getLastName(),
+                            quiz.getTitle(),
+                            result.getObtainedMarks(),  // FIXED: was getScore()
+                            result.getTotalMarks()
+                        );
+                    } else {
+                        emailService.sendQuizCompletionEmail(
+                            student.getEmail(),
+                            student.getFirstName() + " " + student.getLastName(),
+                            "Quiz",
+                            result.getObtainedMarks(),  // FIXED: was getScore()
+                            result.getTotalMarks()
+                        );
+                    }
+                } else {
+                    System.out.println("⚠️ Cannot send email: Student email not found");
+                }
+            } catch (Exception emailError) {
+                System.err.println("⚠️ Email notification failed but quiz was saved: " + emailError.getMessage());
+            }
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {

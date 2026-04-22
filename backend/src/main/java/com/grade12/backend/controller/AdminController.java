@@ -2,6 +2,8 @@ package com.grade12.backend.controller;
 
 import com.grade12.backend.model.User;
 import com.grade12.backend.repository.UserRepository;
+import com.grade12.backend.repository.StudentSubjectRepository;
+import com.grade12.backend.repository.QuizRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +25,19 @@ public class AdminController {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private StudentSubjectRepository studentSubjectRepository;
+    
+    @Autowired
+    private QuizRepository quizRepository;
+    
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // GET all users (excluding soft deleted)
+    // GET all users (ONLY show active users, not soft-deleted)
     @GetMapping("/users")
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> allUsers = userRepository.findAll();
-        // Filter out soft deleted users
+        // Filter out soft-deleted users (deleted = true) - using isDeleted()
         List<User> activeUsers = allUsers.stream()
                 .filter(user -> !user.isDeleted())
                 .collect(Collectors.toList());
@@ -114,23 +122,39 @@ public class AdminController {
         }
     }
 
-    // DELETE user (Soft Delete - just mark as deleted)
+    // DELETE user (HARD DELETE - permanently remove from database)
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
             Optional<User> user = userRepository.findById(id);
-            if (!user.isPresent() || user.get().isDeleted()) {
+            if (!user.isPresent()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "User not found"));
             }
             
-            // Soft delete - just mark as deleted
             User userToDelete = user.get();
-            userToDelete.setDeleted(true);
-            userToDelete.setUpdatedAt(LocalDateTime.now());
-            userRepository.save(userToDelete);
+            String userCategory = userToDelete.getCategory();
             
-            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+            // Delete related records based on user type
+            try {
+                if ("student".equals(userCategory)) {
+                    studentSubjectRepository.deleteByStudentId(id);
+                    System.out.println("Deleted student-subject relationships for student ID: " + id);
+                }
+                
+                if ("tutor".equals(userCategory)) {
+                    quizRepository.deleteByTutorId(id);
+                    System.out.println("Deleted quizzes for tutor ID: " + id);
+                }
+            } catch (Exception relatedError) {
+                System.out.println("Warning while deleting related records: " + relatedError.getMessage());
+                // Continue with user deletion
+            }
+            
+            // Finally, delete the user
+            userRepository.deleteById(id);
+            
+            return ResponseEntity.ok(Map.of("message", "User permanently deleted from database"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

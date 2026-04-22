@@ -277,6 +277,12 @@ public class QuizService {
         return quiz;
     }
     
+    // ADD THIS METHOD - Get quiz by ID (for email notification)
+    public Quiz getQuizById(Long quizId) {
+        return quizRepository.findById(quizId)
+            .orElse(null);
+    }
+    
     // Delete quiz
     @Transactional
     public void deleteQuiz(String tutorEmail, Long quizId) {
