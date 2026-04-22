@@ -2,6 +2,7 @@ package com.grade12.backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "students")
@@ -21,6 +22,10 @@ public class Student {
     private String address;
     private String parentName;
     private String parentPhone;
+    
+    // Add this relationship
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<QuizAttempt> quizAttempts;
     
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -96,6 +101,14 @@ public class Student {
     
     public void setParentPhone(String parentPhone) {
         this.parentPhone = parentPhone;
+    }
+    
+    public List<QuizAttempt> getQuizAttempts() {
+        return quizAttempts;
+    }
+    
+    public void setQuizAttempts(List<QuizAttempt> quizAttempts) {
+        this.quizAttempts = quizAttempts;
     }
     
     public LocalDateTime getCreatedAt() {

@@ -11,7 +11,7 @@ const SignUp = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    category: '' // New field for category
+    category: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -111,7 +111,7 @@ const SignUp = () => {
             lastName: formData.surname,
             email: formData.email,
             password: formData.password,
-            category: formData.category // Include category in request
+            category: formData.category
           }),
         });
 
@@ -120,7 +120,11 @@ const SignUp = () => {
 
         if (response.ok) {
           // Registration successful
-          setSuccessMessage('Account created successfully! Redirecting to login...');
+          setSuccessMessage('Account created successfully! Redirecting...');
+          
+          // Store the user data and token immediately
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
           
           // Clear form
           setFormData({
@@ -133,9 +137,15 @@ const SignUp = () => {
           });
           setAgreeTerms(false);
           
-          // Redirect to login page after 2 seconds
+          // Redirect based on role after 2 seconds
           setTimeout(() => {
-            navigate('/login');
+            if (data.user.category === 'tutor') {
+              navigate('/tutor/subject-selection'); // Tutors go to subject selection first
+            } else if (data.user.category === 'student') {
+              navigate('/student/subject-selection'); // Students go to subject selection first
+            } else {
+              navigate('/login'); // Others go to login
+            }
           }, 2000);
           
         } else {
@@ -158,7 +168,6 @@ const SignUp = () => {
   };
 
   const handleGoogleSignUp = () => {
-    // Redirect to Spring Boot OAuth2 endpoint
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   };
 
@@ -229,7 +238,6 @@ const SignUp = () => {
               {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
 
-            {/* Category Selection */}
             <div className="form-group">
               <label htmlFor="category">I am a:</label>
               <select

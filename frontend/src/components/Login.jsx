@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 import cityBg from '../assets/images/city.jpg';
@@ -14,49 +14,20 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Check if we have OAuth2 response in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const userParam = urlParams.get('user');
-    
-    if (token && userParam) {
-      const user = JSON.parse(userParam);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      // Redirect based on user role
-      redirectBasedOnRole(user.category);
-    }
-  }, []);
-
-  const redirectBasedOnRole = (category) => {
-    if (category === 'student') {
-      // Check if student has selected subjects
-     // Update the redirectBasedOnRole function in Login.js
-const redirectBasedOnRole = (category) => {
-  if (category === 'student') {
-    // Check if student has selected subjects
+  // Define redirectBasedOnRole with useCallback
+  const redirectBasedOnRole = useCallback((category) => {
     const userData = JSON.parse(localStorage.getItem('user'));
-    const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
-    if (savedSubjects) {
-      navigate('/student-dashboard');
-    } else {
-      navigate('/student/subject-selection');
-    }
-  } else if (category === 'tutor') {
-    // Always go to subject selection first for tutors
-    navigate('/tutor/subject-selection');
-  } else if (category === 'admin') {
-    navigate('/admin-dashboard');
-  } else {
-    navigate('/');
-  }
-};
-      // Check if tutor has selected subjects
-      const userData = JSON.parse(localStorage.getItem('user'));
+    
+    if (category === 'student') {
+      const savedSubjects = localStorage.getItem(`student_subjects_${userData?.id}`);
+      if (savedSubjects && JSON.parse(savedSubjects).length > 0) {
+        navigate('/student-dashboard');
+      } else {
+        navigate('/student/subject-selection');
+      }
+    } else if (category === 'tutor') {
       const savedSubjects = localStorage.getItem(`tutor_subjects_${userData?.id}`);
-      if (savedSubjects) {
+      if (savedSubjects && JSON.parse(savedSubjects).length > 0) {
         navigate('/tutor-dashboard');
       } else {
         navigate('/tutor/subject-selection');
@@ -66,7 +37,33 @@ const redirectBasedOnRole = (category) => {
     } else {
       navigate('/');
     }
-  };
+  }, [navigate]);
+
+  // Handle OAuth2 redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const refreshToken = urlParams.get('refreshToken');
+    const userParam = urlParams.get('user');
+    
+    if (token && userParam) {
+      try {
+        const decodedUserJson = decodeURIComponent(userParam);
+        const user = JSON.parse(decodedUserJson);
+        
+        localStorage.setItem('token', token);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        redirectBasedOnRole(user.category);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        alert('Login failed: Could not process user data');
+      }
+    }
+  }, [redirectBasedOnRole]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -84,8 +81,8 @@ const redirectBasedOnRole = (category) => {
 
   const validateForm = () => {
     const newErrors = {};
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!emailRegex.test(formData.email)) {
@@ -120,7 +117,6 @@ const redirectBasedOnRole = (category) => {
         const data = await response.json();
 
         if (response.ok) {
-          // Store token and user data
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('refreshToken', data.refreshToken);
@@ -129,9 +125,6 @@ const redirectBasedOnRole = (category) => {
             localStorage.setItem('rememberedEmail', formData.email);
           }
           
-          console.log('User role:', data.user.category);
-          
-          // Redirect based on user role
           redirectBasedOnRole(data.user.category);
         } else {
           setErrors({ submit: data.message || 'Invalid email or password' });

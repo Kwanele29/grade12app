@@ -23,11 +23,11 @@ public class QuizAttempt {
     private Double percentage;
     private Integer correctAnswers;
     private Integer totalQuestions;
-    private Integer timeTaken; // in seconds
+    private Integer timeTaken;
     
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
-    private String status; // IN_PROGRESS, COMPLETED, TIMED_OUT
+    private String status;
     
     @Column(columnDefinition = "json")
     private String answers;
@@ -35,7 +35,7 @@ public class QuizAttempt {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Getters and Setters
+    // Explicit getters and setters
     public Long getId() {
         return id;
     }
@@ -152,6 +152,15 @@ public class QuizAttempt {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (correctAnswers == null) {
+            correctAnswers = 0;
+        }
+        if (score == null) {
+            score = 0.0;
+        }
+        if (percentage == null) {
+            percentage = 0.0;
+        }
     }
     
     @PreUpdate

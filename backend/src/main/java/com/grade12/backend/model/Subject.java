@@ -1,12 +1,19 @@
 package com.grade12.backend.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "subjects")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Subject {
     
@@ -18,32 +25,90 @@ public class Subject {
     private String name;
     
     private String code;
+    
+    @Column(length = 2000)
     private String description;
+    
+    @Column(name = "icon_url")
+    private String iconUrl;
+    
+    private String color;
+    
+    @Column(name = "bg_color")
+    private String bgColor;
+    
+    @Column(name = "tutor_id")
+    private Long tutorId;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("subject")
     private List<Material> materials = new ArrayList<>();
     
-    public Subject() {}
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("subject")
+    private List<Quiz> quizzes = new ArrayList<>();
     
-    public Subject(String name, String code) {
-        this.name = name;
-        this.code = code;
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("subject")
+    private List<StudentSubject> studentSubjects = new ArrayList<>();
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        
+        // Set default color if not provided
+        if (color == null) {
+            color = "#3b82f6";
+        }
+        
+        // Set default icon if not provided
+        if (iconUrl == null) {
+            iconUrl = "📚";
+        }
     }
     
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
     
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    // Helper methods
+    public void addMaterial(Material material) {
+        materials.add(material);
+        material.setSubject(this);
+    }
     
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
+    public void removeMaterial(Material material) {
+        materials.remove(material);
+        material.setSubject(null);
+    }
     
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void addQuiz(Quiz quiz) {
+        quizzes.add(quiz);
+        quiz.setSubject(this);
+    }
     
-    public List<Material> getMaterials() { return materials; }
-    public void setMaterials(List<Material> materials) { this.materials = materials; }
+    public void removeQuiz(Quiz quiz) {
+        quizzes.remove(quiz);
+        quiz.setSubject(null);
+    }
+    
+    public int getTotalQuizzes() {
+        return quizzes != null ? quizzes.size() : 0;
+    }
+    
+    public int getTotalMaterials() {
+        return materials != null ? materials.size() : 0;
+    }
+    
+    public int getTotalStudents() {
+        return studentSubjects != null ? studentSubjects.size() : 0;
+    }
 }

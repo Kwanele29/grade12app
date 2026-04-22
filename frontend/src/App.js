@@ -3,18 +3,27 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './components/Home';
 import SignUp from './components/SignUp';
 import Login from './components/Login';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import StudentDashboard from './components/student/StudentDashboard';
 import TutorSubjectSelection from './components/tutor/TutorSubjectSelection';
 import StudentSubjectSelection from './components/student/StudentSubjectSelection';
+import Subjects from './components/student/Subjects';
 import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
-import SubjectManager from './components/SubjectManager';
 import Quizzes from './components/student/Quizzes';
 import Material from './components/tutor/Material';
 import TutorSessions from './components/tutor/TutorSessions';
 import TutorQuizzes from './components/tutor/TutorQuizzes';
 import TutorFeedback from './components/tutor/TutorFeedback';
 import TutorMessages from './components/tutor/TutorMessages';
+
+// Admin Component Imports (Essential only)
+import AdminUsers from './components/admin/AdminUsers';
+import AdminSettings from './components/admin/AdminSettings';
+
+import TestQuizzes from './components/student/TestQuizzes';
+
 import './App.css';
 
 // Protected Route component to check authentication and role
@@ -122,7 +131,14 @@ function App() {
                         </PublicRoute>
                     } />
                     
+
                     {/* ==================== STUDENT ROUTES ==================== */}
+
+                    {/* Password Reset Routes */}
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password/:token" element={<ResetPassword />} />
+                    
+                    {/* Student Routes */}
                     <Route path="/student/subject-selection" element={
                         <ProtectedRoute allowedRoles={['student']}>
                             <StudentSubjectSelection />
@@ -141,9 +157,10 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
+                    {/* Subjects route */}
                     <Route path="/subjects" element={
                         <ProtectedRoute allowedRoles={['student']}>
-                            <SubjectManager />
+                            <Subjects />
                         </ProtectedRoute>
                     } />
                     
@@ -183,15 +200,8 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
-                    {/* Quizzes Management */}
+                    {/* Quizzes Management - Main route for tutor quizzes */}
                     <Route path="/tutor/quizzes" element={
-                        <ProtectedRoute allowedRoles={['tutor']}>
-                            <TutorQuizzes />
-                        </ProtectedRoute>
-                    } />
-                    
-                    {/* Alternative route for quiz (backward compatibility) */}
-                    <Route path="/tutor/quiz" element={
                         <ProtectedRoute allowedRoles={['tutor']}>
                             <TutorQuizzes />
                         </ProtectedRoute>
@@ -212,11 +222,29 @@ function App() {
                     } />
                     
                     {/* ==================== ADMIN ROUTES ==================== */}
+                    {/* Admin Dashboard - Main admin panel */}
                     <Route path="/admin-dashboard" element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <AdminDashboard />
                         </ProtectedRoute>
                     } />
+                    
+                    {/* Admin Users Management */}
+                    <Route path="/admin/users" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminUsers />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin Settings */}
+                    <Route path="/admin/settings" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminSettings />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Test Route */}
+                    <Route path="/test-quizzes" element={<TestQuizzes />} />
                     
                     {/* Catch all - redirect to home */}
                     <Route path="*" element={<Navigate to="/" replace />} />

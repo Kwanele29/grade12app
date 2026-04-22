@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import axios from 'axios';
+import api from '../../services/api';
 import './TutorMessages.css';
 
 const TutorMessages = () => {
@@ -20,7 +20,6 @@ const TutorMessages = () => {
   
   const stompClient = useRef(null);
   const messagesEndRef = useRef(null);
-  const API_BASE_URL = 'http://localhost:8080/api';
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -33,6 +32,7 @@ const TutorMessages = () => {
 
   // Format message time
   const formatMessageTime = useCallback((timestamp) => {
+    if (!timestamp) return 'Just now';
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now - date;
@@ -52,7 +52,7 @@ const TutorMessages = () => {
     if (!user) return;
     
     try {
-      await axios.post(`${API_BASE_URL}/chat/mark-read`, {
+      await api.post('/chat/mark-read', {
         senderId: studentId,
         receiverId: user.id
       });
@@ -64,7 +64,7 @@ const TutorMessages = () => {
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
-  }, [user, API_BASE_URL]);
+  }, [user]);
 
   // Connect to WebSocket
   const connectWebSocket = useCallback(() => {
@@ -156,12 +156,12 @@ const TutorMessages = () => {
     }, 2000));
   };
 
-  // Load conversation history
+  // Load conversation history from API (NO MOCK)
   const loadConversation = useCallback(async (studentId) => {
     if (!user) return;
     
     try {
-      const response = await axios.get(`${API_BASE_URL}/chat/conversation/${user.id}/${studentId}`);
+      const response = await api.get(`/chat/conversation/${user.id}/${studentId}`);
       const formattedMessages = response.data.map(msg => ({
         id: msg.id,
         studentId: msg.senderId === studentId ? studentId : user.id,
@@ -176,75 +176,37 @@ const TutorMessages = () => {
       markMessagesAsRead(studentId);
     } catch (error) {
       console.error('Error loading conversation:', error);
-      // Use mock messages if API fails
-      loadMockMessages(studentId);
+      setMessages([]);
     }
-  }, [user, API_BASE_URL, formatMessageTime, markMessagesAsRead]);
+  }, [user, formatMessageTime, markMessagesAsRead]);
 
-  // Load mock messages for demo
-  const loadMockMessages = (studentId) => {
-    const mockMessages = {
-      1: [
-        { id: 1, studentId: 1, text: 'Hi Thabo! How can I help you with mathematics?', time: '10:00 AM', isFromMe: false },
-        { id: 2, studentId: 1, text: 'Can you help me with algebra? I\'m struggling with quadratic equations.', time: '10:15 AM', isFromMe: true },
-        { id: 3, studentId: 1, text: 'Of course! Quadratic equations are of the form ax² + bx + c = 0', time: '10:20 AM', isFromMe: false },
-        { id: 4, studentId: 1, text: 'That makes sense! Can we practice some problems?', time: '10:25 AM', isFromMe: true },
-      ],
-      2: [
-        { id: 5, studentId: 2, text: 'Thanks for the session yesterday!', time: 'Yesterday', isFromMe: true },
-        { id: 6, studentId: 2, text: 'You\'re welcome! Let me know if you need any more help with Physical Science.', time: 'Yesterday', isFromMe: false },
-      ],
-      3: [
-        { id: 7, studentId: 3, text: 'When is our next class?', time: 'Yesterday', isFromMe: true },
-        { id: 8, studentId: 3, text: 'We have a session scheduled for tomorrow at 3 PM.', time: 'Yesterday', isFromMe: false },
-      ],
-    };
-    
-    setMessages(mockMessages[studentId] || []);
-  };
-
-  // Fetch students from API or use mock data
+  // Fetch students from API (NO MOCK)
   const fetchStudents = useCallback(async (tutorId) => {
     try {
-      // Try to fetch from API
-      const response = await axios.get(`${API_BASE_URL}/tutor/${tutorId}/students`);
+      const response = await api.get(`/tutor/${tutorId}/students`);
       if (response.data && response.data.length > 0) {
         const formattedStudents = response.data.map(student => ({
           id: student.id,
-          name: student.name,
+          name: `${student.firstName} ${student.lastName}`,
           email: student.email,
-          avatar: student.name.split(' ').map(n => n[0]).join(''),
-          lastMessage: 'No messages yet',
-          time: '',
-          unread: 0,
+          avatar: `${student.firstName?.[0]}${student.lastName?.[0]}`,
+          lastMessage: student.lastMessage || 'No messages yet',
+          time: student.lastMessageTime ? formatMessageTime(student.lastMessageTime) : '',
+          unread: student.unreadCount || 0,
           online: student.online || false,
-          subject: student.subject
+          subject: student.subject || 'General'
         }));
         setStudents(formattedStudents);
       } else {
-        // Use mock data from TutorDashboard
-        setStudents([
-          { id: 1, name: 'Thabo Mokoena', avatar: 'TM', lastMessage: 'Can you help me with algebra?', time: '10:30 AM', unread: 2, online: true, email: 'thabo.m@student.com', subject: 'Mathematics' },
-          { id: 2, name: 'Lerato Ndlovu', avatar: 'LN', lastMessage: 'Thanks for the session!', time: 'Yesterday', unread: 0, online: false, email: 'lerato.n@student.com', subject: 'Physical Science' },
-          { id: 3, name: 'Sipho Dlamini', avatar: 'SD', lastMessage: 'When is our next class?', time: 'Yesterday', unread: 1, online: true, email: 'sipho.d@student.com', subject: 'Mathematics' },
-          { id: 4, name: 'Nomsa Zwane', avatar: 'NZ', lastMessage: 'I need help with physics', time: '2 days ago', unread: 0, online: false, email: 'nomsa.z@student.com', subject: 'English' },
-          { id: 5, name: 'Kagiso Moeketsi', avatar: 'KM', lastMessage: 'Great explanation!', time: '3 days ago', unread: 0, online: true, email: 'kagiso.m@student.com', subject: 'Life Sciences' },
-          { id: 6, name: 'Priya Patel', avatar: 'PP', lastMessage: 'Can you send me the notes?', time: '1 day ago', unread: 3, online: true, email: 'priya.p@student.com', subject: 'Tourism' },
-          { id: 7, name: 'Michael van der Merwe', avatar: 'MV', lastMessage: 'Thanks for your help!', time: '5 hours ago', unread: 0, online: false, email: 'michael.v@student.com', subject: 'Geography' },
-        ]);
+        setStudents([]);
       }
     } catch (error) {
       console.error('Error fetching students:', error);
-      // Use mock data on error
-      setStudents([
-        { id: 1, name: 'Thabo Mokoena', avatar: 'TM', lastMessage: 'Can you help me with algebra?', time: '10:30 AM', unread: 2, online: true, email: 'thabo.m@student.com', subject: 'Mathematics' },
-        { id: 2, name: 'Lerato Ndlovu', avatar: 'LN', lastMessage: 'Thanks for the session!', time: 'Yesterday', unread: 0, online: false, email: 'lerato.n@student.com', subject: 'Physical Science' },
-        { id: 3, name: 'Sipho Dlamini', avatar: 'SD', lastMessage: 'When is our next class?', time: 'Yesterday', unread: 1, online: true, email: 'sipho.d@student.com', subject: 'Mathematics' },
-      ]);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL]);
+  }, [formatMessageTime]);
 
   // Send message
   const handleSendMessage = useCallback(async () => {
@@ -354,7 +316,7 @@ const TutorMessages = () => {
   }, [typingTimeout]);
 
   if (loading) {
-    return <div className="loading-container">Loading messages...</div>;
+    return <div className="loading-container">Loading messages from database...</div>;
   }
 
   const filteredStudents = students.filter(student =>
@@ -379,7 +341,7 @@ const TutorMessages = () => {
           {/* Students List */}
           <div className="students-list">
             <div className="students-list-header">
-              <h3>Students</h3>
+              <h3>Students ({students.length})</h3>
               <div className="search-box">
                 <input 
                   type="text" 
@@ -390,28 +352,31 @@ const TutorMessages = () => {
               </div>
             </div>
             <div className="students-scroll">
-              {filteredStudents.map(student => (
-                <div 
-                  key={student.id} 
-                  className={`student-item ${selectedStudent?.id === student.id ? 'active' : ''}`}
-                  onClick={() => handleSelectStudent(student)}
-                >
-                  <div className="student-avatar" style={{ background: `linear-gradient(135deg, #667eea, #764ba2)` }}>
-                    {student.avatar}
-                    {student.online && <span className="online-dot"></span>}
-                  </div>
-                  <div className="student-info">
-                    <div className="student-name">
-                      {student.name}
-                      {student.unread > 0 && <span className="unread-badge">{student.unread}</span>}
-                    </div>
-                    <div className="student-last-message">{student.lastMessage}</div>
-                    <div className="student-time">{student.time}</div>
-                  </div>
+              {filteredStudents.length === 0 ? (
+                <div className="no-students">
+                  {searchTerm ? 'No students match your search' : 'No students found in the database'}
                 </div>
-              ))}
-              {filteredStudents.length === 0 && (
-                <div className="no-students">No students found</div>
+              ) : (
+                filteredStudents.map(student => (
+                  <div 
+                    key={student.id} 
+                    className={`student-item ${selectedStudent?.id === student.id ? 'active' : ''}`}
+                    onClick={() => handleSelectStudent(student)}
+                  >
+                    <div className="student-avatar" style={{ background: `linear-gradient(135deg, #667eea, #764ba2)` }}>
+                      {student.avatar}
+                      {student.online && <span className="online-dot"></span>}
+                    </div>
+                    <div className="student-info">
+                      <div className="student-name">
+                        {student.name}
+                        {student.unread > 0 && <span className="unread-badge">{student.unread}</span>}
+                      </div>
+                      <div className="student-last-message">{student.lastMessage}</div>
+                      <div className="student-time">{student.time}</div>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -438,14 +403,22 @@ const TutorMessages = () => {
                 </div>
 
                 <div className="messages-list">
-                  {messages.map((msg, index) => (
-                    <div key={msg.id || index} className={`message ${msg.isFromMe ? 'sent' : 'received'}`}>
-                      <div className="message-bubble">
-                        <div className="message-text">{msg.text}</div>
-                        <div className="message-time">{msg.time}</div>
-                      </div>
+                  {messages.length === 0 ? (
+                    <div className="no-messages">
+                      <div className="no-messages-icon">💬</div>
+                      <p>No messages yet</p>
+                      <p className="no-messages-sub">Send a message to start the conversation</p>
                     </div>
-                  ))}
+                  ) : (
+                    messages.map((msg, index) => (
+                      <div key={msg.id || index} className={`message ${msg.isFromMe ? 'sent' : 'received'}`}>
+                        <div className="message-bubble">
+                          <div className="message-text">{msg.text}</div>
+                          <div className="message-time">{msg.time}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                   {typing && (
                     <div className="typing-indicator">
                       <span>{selectedStudent.name} is typing...</span>

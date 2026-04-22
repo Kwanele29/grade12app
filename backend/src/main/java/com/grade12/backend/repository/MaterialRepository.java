@@ -27,4 +27,6 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
     
     @Query("SELECT m FROM Material m WHERE m.tutor.id = :tutorId AND LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Material> searchByTitle(@Param("tutorId") Long tutorId, @Param("keyword") String keyword);
+
+ List<Material> findBySubjectId(Long subjectId);
 }

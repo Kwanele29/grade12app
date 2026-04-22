@@ -1,7 +1,7 @@
 // src/components/tutor/TutorSubjectSelection.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { availableSubjects } from '../../constants/subjects'; // Correct path
+import { availableSubjects } from '../../constants/subjects';
 import './TutorSubjectSelection.css';
 
 const TutorSubjectSelection = () => {
@@ -14,46 +14,43 @@ const TutorSubjectSelection = () => {
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    
+
     if (!userData || !token) {
       navigate('/login');
       return;
     }
-    
+
     try {
       const parsedUser = JSON.parse(userData);
       if (parsedUser.category !== 'tutor') {
         navigate('/login');
         return;
       }
-      
+
       setUser(parsedUser);
-      
-      // Check if tutor already has selected subjects
+
       const savedSubjects = localStorage.getItem(`tutor_subjects_${parsedUser.id}`);
       if (savedSubjects) {
-        // If subjects already exist, go directly to dashboard
         navigate('/tutor-dashboard');
       }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+    } catch (err) {
+      console.error('Error parsing user data:', err);
       navigate('/login');
     }
-  }, [navigate]);
+  }, [navigate]); // navigate is stable from react-router, this is fine
 
-  const handleSubjectToggle = (subject) => {
+  const handleSubjectToggle = useCallback((subject) => {
     setSelectedSubjects(prev => {
       const isSelected = prev.some(s => s.id === subject.id);
       if (isSelected) {
         return prev.filter(s => s.id !== subject.id);
-      } else {
-        setError('');
-        return [...prev, subject];
       }
+      setError('');
+      return [...prev, subject];
     });
-  };
+  }, []);
 
-  const handleContinue = async () => {
+  const handleContinue = useCallback(async () => {
     if (selectedSubjects.length === 0) {
       setError('Please select at least one subject to continue');
       setTimeout(() => setError(''), 3000);
@@ -62,27 +59,27 @@ const TutorSubjectSelection = () => {
 
     setLoading(true);
     setError('');
-    
+
     try {
       localStorage.setItem(`tutor_subjects_${user.id}`, JSON.stringify(selectedSubjects));
       navigate('/tutor-dashboard');
-    } catch (error) {
-      console.error('Error saving subjects:', error);
+    } catch (err) {
+      console.error('Error saving subjects:', err);
       setError('Failed to save subjects. Please try again.');
       setTimeout(() => setError(''), 3000);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSubjects, user, navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     if (window.confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('refreshToken');
       navigate('/login');
     }
-  };
+  }, [navigate]);
 
   if (!user) {
     return <div className="loading">Loading...</div>;
@@ -111,7 +108,7 @@ const TutorSubjectSelection = () => {
         <div className="subjects-container">
           {availableSubjects.map(subject => {
             const isSelected = selectedSubjects.some(s => s.id === subject.id);
-            
+
             return (
               <div
                 key={subject.id}
@@ -122,9 +119,9 @@ const TutorSubjectSelection = () => {
                   backgroundColor: isSelected ? subject.bgColor : 'white'
                 }}
               >
-                <div 
+                <div
                   className="subject-option-icon"
-                  style={{ 
+                  style={{
                     backgroundColor: subject.bgColor,
                     color: subject.color
                   }}
@@ -136,7 +133,7 @@ const TutorSubjectSelection = () => {
                   <span>{subject.description}</span>
                 </div>
                 {isSelected && (
-                  <div 
+                  <div
                     className="selected-badge"
                     style={{ backgroundColor: subject.color }}
                   >
@@ -152,7 +149,7 @@ const TutorSubjectSelection = () => {
           <div className="selected-summary">
             <strong>{selectedSubjects.length}</strong> subject{selectedSubjects.length !== 1 ? 's' : ''} selected
           </div>
-          
+
           <button
             onClick={handleContinue}
             disabled={selectedSubjects.length === 0 || loading}

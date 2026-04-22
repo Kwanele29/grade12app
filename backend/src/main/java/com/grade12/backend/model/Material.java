@@ -97,7 +97,11 @@ public class Material {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    
+    // Add this method to Material.java
+public String getSubjectName() {
+    return subject != null ? subject.getName() : null;
+}
+
     @PrePersist
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();

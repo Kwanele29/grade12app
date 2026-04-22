@@ -10,10 +10,6 @@ const Home = () => {
     navigate('/signup');
   };
 
-  const handleWatchDemo = () => {
-    window.open('https://www.youtube.com/watch?v=demo', '_blank');
-  };
-
   const handleLogin = () => {
     navigate('/login');
   };
@@ -52,7 +48,6 @@ const Home = () => {
           <p className="hero-subtitle">The ultimate exam prep app for Grade 12 students.</p>
           <div className="hero-buttons">
             <button onClick={handleGetStarted} className="btn btn-primary">Get Started</button>
-            <button onClick={handleWatchDemo} className="btn btn-secondary">Watch Demo</button>
           </div>
         </div>
         <div className="hero-image">

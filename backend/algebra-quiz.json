@@ -1,0 +1,189 @@
+{
+  "title": "Algebra Fundamentals - 20 Questions",
+  "description": "Test your algebra skills with these 20 questions covering equations, inequalities, polynomials, and functions.",
+  "subjectId": 1,
+  "timeLimitMinutes": 30,
+  "difficulty": "Medium",
+  "questions": [
+    {
+      "question": "Solve for x: 3(x - 4) = 2(x + 5)",
+      "optionA": "x = 22",
+      "optionB": "x = 18",
+      "optionC": "x = 20",
+      "optionD": "x = 16",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "What is the value of x in the equation 2x² + 5x - 12 = 0?",
+      "optionA": "x = 3/2 or x = -4",
+      "optionB": "x = -3/2 or x = 4",
+      "optionC": "x = 2 or x = -3",
+      "optionD": "x = -2 or x = 3",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Simplify: (3x²y³)³",
+      "optionA": "27x⁶y⁹",
+      "optionB": "9x⁵y⁶",
+      "optionC": "27x⁵y⁶",
+      "optionD": "9x⁶y⁹",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Factor completely: x² - 16",
+      "optionA": "(x-4)(x+4)",
+      "optionB": "(x-4)²",
+      "optionC": "(x+4)²",
+      "optionD": "(x-8)(x+2)",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "If f(x) = 2x² - 3x + 1, find f(2)",
+      "optionA": "3",
+      "optionB": "5",
+      "optionC": "7",
+      "optionD": "9",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Solve the inequality: 3x - 7 < 2x + 5",
+      "optionA": "x < 12",
+      "optionB": "x > 12",
+      "optionC": "x < -12",
+      "optionD": "x > -12",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "What is the slope of the line y = 4x - 7?",
+      "optionA": "4",
+      "optionB": "-7",
+      "optionC": "7",
+      "optionD": "-4",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Simplify: (2x³)(3x⁴)",
+      "optionA": "6x⁷",
+      "optionB": "5x⁷",
+      "optionC": "6x¹²",
+      "optionD": "5x¹²",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Solve for x: 5^(x-1) = 25",
+      "optionA": "x = 3",
+      "optionB": "x = 2",
+      "optionC": "x = 4",
+      "optionD": "x = 5",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "What is the y-intercept of the line 2x + 3y = 12?",
+      "optionA": "4",
+      "optionB": "6",
+      "optionC": "-4",
+      "optionD": "-6",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Factor: x² + 5x + 6",
+      "optionA": "(x+2)(x+3)",
+      "optionB": "(x-2)(x-3)",
+      "optionC": "(x+1)(x+6)",
+      "optionD": "(x-1)(x-6)",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "If f(x) = 3x - 2 and g(x) = x², find f(g(2))",
+      "optionA": "10",
+      "optionB": "8",
+      "optionC": "12",
+      "optionD": "14",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Solve the system: 2x + y = 7, x - y = 2",
+      "optionA": "x = 3, y = 1",
+      "optionB": "x = 2, y = 3",
+      "optionC": "x = 1, y = 5",
+      "optionD": "x = 4, y = -1",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "What is the value of x if log₃(x) = 4?",
+      "optionA": "81",
+      "optionB": "64",
+      "optionC": "27",
+      "optionD": "12",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Simplify: (x² - 9) ÷ (x - 3)",
+      "optionA": "x + 3",
+      "optionB": "x - 3",
+      "optionC": "x² + 3x + 9",
+      "optionD": "x² - 3x + 9",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "What is the vertex of the parabola y = x² - 6x + 8?",
+      "optionA": "(3, -1)",
+      "optionB": "(-3, 1)",
+      "optionC": "(3, 1)",
+      "optionD": "(-3, -1)",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Solve for x: 2x² - 8x = 0",
+      "optionA": "x = 0 or x = 4",
+      "optionB": "x = 0 or x = -4",
+      "optionC": "x = 2 or x = -2",
+      "optionD": "x = 4 only",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "If a = 2 and b = -3, find a² - b²",
+      "optionA": "-5",
+      "optionB": "5",
+      "optionC": "13",
+      "optionD": "-13",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "What is the domain of f(x) = √(x - 5)?",
+      "optionA": "x ≥ 5",
+      "optionB": "x > 5",
+      "optionC": "x ≤ 5",
+      "optionD": "x < 5",
+      "correctOption": 0,
+      "marks": 1
+    },
+    {
+      "question": "Simplify: (x + 2)(x - 3) - (x - 1)(x + 4)",
+      "optionA": "-2x - 2",
+      "optionB": "-2x + 2",
+      "optionC": "2x - 2",
+      "optionD": "2x + 2",
+      "correctOption": 0,
+      "marks": 1
+    }
+  ]
+}
