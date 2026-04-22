@@ -1,17 +1,17 @@
-/* src/components/tutor/TutorFeedback.css */
+/* src/components/tutor/TutorFeedback.css - Black and Blue Theme */
 .feedback-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0B0C10;
   padding: 20px;
 }
 
 .feedback-card {
   max-width: 900px;
   margin: 0 auto;
-  background: white;
+  background: #1F2833;
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .feedback-header {
@@ -22,13 +22,13 @@
   gap: 15px;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid rgba(102, 252, 241, 0.2);
 }
 
 .back-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: #66FCF1;
   font-size: 16px;
   cursor: pointer;
   padding: 8px 16px;
@@ -37,13 +37,13 @@
 }
 
 .back-btn:hover {
-  background: #f7fafc;
+  background: rgba(102, 252, 241, 0.1);
   transform: translateX(-2px);
 }
 
 .feedback-header h1 {
   margin: 0;
-  color: #2d3748;
+  color: #C5C6C7;
   font-size: 28px;
 }
 
@@ -71,7 +71,8 @@
 
 .total-feedback {
   font-size: 14px;
-  color: #718096;
+  color: #C5C6C7;
+  opacity: 0.7;
 }
 
 /* Stats Cards */
@@ -83,28 +84,31 @@
 }
 
 .stat-card {
-  background: #f7fafc;
+  background: #0B0C10;
   padding: 20px;
   border-radius: 12px;
   text-align: center;
   transition: all 0.3s;
+  border: 1px solid rgba(102, 252, 241, 0.1);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(102, 252, 241, 0.3);
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: bold;
-  color: #667eea;
+  color: #66FCF1;
   margin-bottom: 8px;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #718096;
+  color: #C5C6C7;
+  opacity: 0.7;
 }
 
 /* Feedback List */
@@ -115,11 +119,12 @@
 }
 
 .feedback-item {
-  background: #f7fafc;
+  background: #0B0C10;
   border-radius: 12px;
   padding: 20px;
   transition: all 0.3s;
   animation: fadeIn 0.3s ease;
+  border: 1px solid rgba(102, 252, 241, 0.1);
 }
 
 @keyframes fadeIn {
@@ -135,7 +140,8 @@
 
 .feedback-item:hover {
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border-color: rgba(102, 252, 241, 0.3);
 }
 
 .feedback-item-header {
@@ -156,25 +162,26 @@
 .student-avatar {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #0B0C10;
   font-weight: bold;
   font-size: 18px;
 }
 
 .student-name {
   font-weight: 600;
-  color: #2d3748;
+  color: #C5C6C7;
   margin-bottom: 4px;
 }
 
 .feedback-subject {
   font-size: 12px;
-  color: #718096;
+  color: #C5C6C7;
+  opacity: 0.7;
 }
 
 .feedback-rating {
@@ -187,53 +194,55 @@
 .rating-number {
   font-weight: 600;
   margin-left: 5px;
+  color: #C5C6C7;
 }
 
 .feedback-comment {
   margin-bottom: 15px;
   padding: 15px;
-  background: white;
+  background: #1F2833;
   border-radius: 8px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #66FCF1;
 }
 
 .feedback-comment p {
   margin: 0 0 8px 0;
-  color: #4a5568;
+  color: #C5C6C7;
   line-height: 1.5;
   font-style: italic;
 }
 
 .feedback-date {
   font-size: 12px;
-  color: #a0aec0;
+  color: #C5C6C7;
+  opacity: 0.5;
 }
 
 .feedback-response {
   margin-top: 15px;
   padding: 12px;
-  background: #e6f7e6;
+  background: rgba(69, 162, 158, 0.2);
   border-radius: 8px;
-  border-left: 3px solid #48bb78;
+  border-left: 3px solid #45A29E;
 }
 
 .response-label {
   font-size: 12px;
   font-weight: 600;
-  color: #22543d;
+  color: #45A29E;
   margin-bottom: 5px;
 }
 
 .response-text {
-  color: #2d3748;
+  color: #C5C6C7;
   font-size: 14px;
 }
 
 .respond-btn {
   margin-top: 15px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
+  color: #0B0C10;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -244,7 +253,7 @@
 
 .respond-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 252, 241, 0.3);
 }
 
 /* Loading State */
@@ -254,15 +263,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  background: #0B0C10;
+  color: #C5C6C7;
 }
 
 .loading-spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 3px solid rgba(102, 252, 241, 0.3);
+  border-top-color: #66FCF1;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
