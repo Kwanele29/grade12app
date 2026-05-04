@@ -6,6 +6,7 @@
   min-height: 100vh;
 }
 
+<<<<<<< HEAD
 /* Back Button Container & Box Styling */
 .settings-back-btn {
   margin-bottom: 1.5rem;
@@ -37,6 +38,8 @@
   transform: translateY(0);
 }
 
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 /* Header */
 .settings-header {
   display: flex;

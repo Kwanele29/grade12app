@@ -14,10 +14,16 @@ public class AuthResponse {
     private User user;
     private String message;
     
+    // Constructor for successful login/registration
     public AuthResponse(String token, String refreshToken, User user) {
         this.token = token;
         this.refreshToken = refreshToken;
         this.user = user;
         this.message = "Authentication successful";
+    }
+    
+    // Constructor for error responses
+    public AuthResponse(String message) {
+        this.message = message;
     }
 }

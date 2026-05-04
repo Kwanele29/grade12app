@@ -32,14 +32,21 @@ public class MaterialController {
     public ResponseEntity<?> uploadMaterial(
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("title") String title,
-            @RequestParam("description") String description,
+            @RequestParam(value = "description", required = false) String description,
             @RequestParam("subjectId") Long subjectId,
+<<<<<<< HEAD
             @RequestParam("topic") String topic,
             @RequestParam("tags") String tags,
             @RequestParam("tutorId") Long tutorId,
             @RequestParam(value = "videoLink", required = false) String videoLink,
             @RequestParam("materialType") String materialType) {   // ✅ NEW: explicit type from dropdown
 
+=======
+            @RequestParam(value = "topic", required = false) String topic,
+            @RequestParam(value = "tags", required = false) String tags,
+            @RequestParam("tutorId") Long tutorId) {
+        
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
         try {
             boolean hasFile = file != null && !file.isEmpty();
             boolean hasLink = videoLink != null && !videoLink.isBlank();
@@ -63,6 +70,7 @@ public class MaterialController {
 
             Material material = new Material();
             material.setTitle(title);
+<<<<<<< HEAD
             material.setDescription(description);
             material.setTopic(topic);
             material.setTags(tags != null ? tags.split(",") : new String[0]);
@@ -79,11 +87,28 @@ public class MaterialController {
                 material.setVideoLink(null);
             }
 
+=======
+            material.setDescription(description != null ? description : "");
+            material.setMaterialType(materialType);
+            material.setFileUrl(fileUrl);
+            material.setFileSize(fileSize);
+            material.setTopic(topic != null ? topic : "");
+            if (tags != null && !tags.isEmpty()) {
+                material.setTags(tags.split(","));
+            }
+            
+            // Save material with tutor and subject
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
             Material savedMaterial = materialService.createMaterial(material, tutorId, subjectId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Material uploaded successfully");
             response.put("material", savedMaterial);
+<<<<<<< HEAD
+=======
+            response.put("fileUrl", fileUrl);
+            
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -125,7 +150,7 @@ public class MaterialController {
             case "doc": case "docx": return "document";
             case "ppt": case "pptx": return "presentation";
             case "mp4": case "mov": case "avi": case "mkv": return "video";
-            case "jpg": case "jpeg": case "png": case "gif": return "image";
+            case "jpg": case "jpeg": case "png": case "gif": case "webp": return "image";
             case "txt": return "text";
             default: return "other";
         }

@@ -4,17 +4,24 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+<<<<<<< HEAD
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+=======
+import java.time.LocalDateTime;
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 
 @Entity
 @Table(name = "subjects")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+<<<<<<< HEAD
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 public class Subject {
     
     @Id
@@ -24,11 +31,14 @@ public class Subject {
     @Column(nullable = false, unique = true)
     private String name;
     
+<<<<<<< HEAD
     private String code;
     
     @Column(length = 2000)
     private String description;
     
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @Column(name = "icon_url")
     private String iconUrl;
     
@@ -61,6 +71,7 @@ public class Subject {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+<<<<<<< HEAD
         updatedAt = LocalDateTime.now();
         
         // Set default color if not provided
@@ -111,4 +122,7 @@ public class Subject {
     public int getTotalStudents() {
         return studentSubjects != null ? studentSubjects.size() : 0;
     }
+=======
+    }
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 }

@@ -1,7 +1,10 @@
 package com.grade12.backend.model;
 
 import jakarta.persistence.*;
+<<<<<<< HEAD
 import lombok.Data;
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -19,10 +22,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(nullable = false)
+    private String firstName;
     
     @Column(nullable = false)
+<<<<<<< HEAD
     @JsonIgnore
     private String password;
     
@@ -35,6 +39,15 @@ public class User {
     private String category; // "tutor" or "student"
     
     // OAuth2 fields
+=======
+    private String lastName;
+    
+    @Column(unique = true, nullable = false)
+    private String email;
+    
+    private String password;
+    
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @Column(name = "google_id")
     private String googleId;
     
@@ -46,7 +59,13 @@ public class User {
     @Column(name = "email_verified")
     private Boolean emailVerified = false;
     
+<<<<<<< HEAD
     // Password reset fields
+=======
+    @Column(name = "status")
+    private String status = "active";
+    
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @Column(name = "reset_token")
     @JsonIgnore
     private String resetToken;
@@ -85,6 +104,7 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+<<<<<<< HEAD
         
         if (emailVerified == null) {
             emailVerified = false;
@@ -97,6 +117,14 @@ public class User {
         }
         if (lastNotificationCheck == null) {
             lastNotificationCheck = LocalDateTime.now();
+=======
+        lastNotificationCheck = LocalDateTime.now();
+        if (notificationEnabled == null) {
+            notificationEnabled = true;
+        }
+        if (status == null) {
+            status = "active";
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
         }
     }
     
@@ -105,7 +133,65 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
     
+<<<<<<< HEAD
     // Helper methods
+=======
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    
+    public String getGoogleId() { return googleId; }
+    public void setGoogleId(String googleId) { this.googleId = googleId; }
+    
+    public String getPicture() { return picture; }
+    public void setPicture(String picture) { this.picture = picture; }
+    
+    public String getAuthProvider() { return authProvider; }
+    public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
+    
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+    
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    
+    public String getResetToken() { return resetToken; }
+    public void setResetToken(String resetToken) { this.resetToken = resetToken; }
+    
+    public LocalDateTime getResetTokenExpiry() { return resetTokenExpiry; }
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) { this.resetTokenExpiry = resetTokenExpiry; }
+    
+    public LocalDateTime getLastNotificationCheck() { return lastNotificationCheck; }
+    public void setLastNotificationCheck(LocalDateTime lastNotificationCheck) { this.lastNotificationCheck = lastNotificationCheck; }
+    
+    public Boolean getNotificationEnabled() { return notificationEnabled; }
+    public void setNotificationEnabled(Boolean notificationEnabled) { this.notificationEnabled = notificationEnabled; }
+    
+    public List<Quiz> getQuizzes() { return quizzes; }
+    public void setQuizzes(List<Quiz> quizzes) { this.quizzes = quizzes; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     public String getFullName() {
         return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
     }

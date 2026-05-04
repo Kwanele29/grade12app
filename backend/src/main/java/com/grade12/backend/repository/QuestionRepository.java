@@ -1,14 +1,20 @@
 package com.grade12.backend.repository;
 
+<<<<<<< HEAD
 import com.grade12.backend.model.Question;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+=======
+import com.grade12.backend.model.QuizQuestion;
+import org.springframework.data.jpa.repository.JpaRepository;
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
+<<<<<<< HEAD
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     
     /**
@@ -61,4 +67,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      */
     @Query("SELECT q FROM Question q LEFT JOIN FETCH q.quiz WHERE q.quiz.id = :quizId")
     List<Question> findQuestionsWithQuizByQuizId(@Param("quizId") Long quizId);
+=======
+public interface QuestionRepository extends JpaRepository<QuizQuestion, Long> {
+    List<QuizQuestion> findByQuizId(Long quizId);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 }

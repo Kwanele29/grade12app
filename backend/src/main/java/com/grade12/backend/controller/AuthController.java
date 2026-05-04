@@ -32,7 +32,7 @@ public class AuthController {
         try {
             // Check if email already exists
             if (userRepository.existsByEmail(request.getEmail())) {
-                return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Email already registered"));
+                return ResponseEntity.badRequest().body(new AuthResponse("Email already registered"));
             }
 
             // Create new user
@@ -65,7 +65,7 @@ public class AuthController {
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Registration failed: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(new AuthResponse("Registration failed: " + e.getMessage()));
         }
     }
 
@@ -92,7 +92,7 @@ public class AuthController {
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Invalid email or password"));
+            return ResponseEntity.badRequest().body(new AuthResponse("Invalid email or password"));
         }
     }
 
@@ -113,7 +113,7 @@ public class AuthController {
             
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "OAuth2 authentication failed"));
+            return ResponseEntity.badRequest().body(new AuthResponse("OAuth2 authentication failed"));
         }
     }
     

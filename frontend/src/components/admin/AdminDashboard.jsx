@@ -3,7 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminDashboard.css';
 import AdminUsers from './AdminUsers';
 import AdminSettings from './AdminSettings';
+<<<<<<< HEAD
 import AdminReports from './AdminReports';
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -47,8 +50,11 @@ const AdminDashboard = () => {
       setActiveMenu('users');
     } else if (path === '/admin/settings') {
       setActiveMenu('settings');
+<<<<<<< HEAD
     } else if (path === '/admin/reports') {
       setActiveMenu('reports');
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     }
   }, [location]);
 
@@ -88,9 +94,12 @@ const AdminDashboard = () => {
       case 'settings':
         navigate('/admin/settings');
         break;
+<<<<<<< HEAD
       case 'reports':
         navigate('/admin/reports');
         break;
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       default:
         break;
     }
@@ -105,8 +114,11 @@ const AdminDashboard = () => {
         return <AdminUsers />;
       case '/admin/settings':
         return <AdminSettings />;
+<<<<<<< HEAD
       case '/admin/reports':
         return <AdminReports />;
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       default:
         return (
           <>
@@ -151,9 +163,15 @@ const AdminDashboard = () => {
               <h2>Quick Actions</h2>
               <div className="actions-grid">
                 <button className="action-card" onClick={() => handleMenuClick('users')}>
+<<<<<<< HEAD
                   <span className="action-icon">👥</span>
                   <h3>Manage Users</h3>
                   <p>View, add, or edit user accounts</p>
+=======
+                  <span className="action-icon">➕</span>
+                  <h3>Add New User</h3>
+                  <p>Create student, tutor, or admin account</p>
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
                 </button>
 
                 <button className="action-card" onClick={() => handleMenuClick('settings')}>
@@ -174,6 +192,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="activity-item">
                   <span className="activity-time">15 min ago</span>
+<<<<<<< HEAD
                   <span className="activity-text">User account updated: Sarah Johnson</span>
                 </div>
                 <div className="activity-item">
@@ -183,6 +202,17 @@ const AdminDashboard = () => {
                 <div className="activity-item">
                   <span className="activity-time">3 hours ago</span>
                   <span className="activity-text">System settings updated</span>
+=======
+                  <span className="activity-text">Exam paper uploaded: Mathematics P1 2023</span>
+                </div>
+                <div className="activity-item">
+                  <span className="activity-time">1 hour ago</span>
+                  <span className="activity-text">Tutor application approved: Sarah Johnson</span>
+                </div>
+                <div className="activity-item">
+                  <span className="activity-time">3 hours ago</span>
+                  <span className="activity-text">System backup completed successfully</span>
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
                 </div>
               </div>
             </div>
@@ -199,8 +229,11 @@ const AdminDashboard = () => {
         return 'User Management';
       case '/admin/settings':
         return 'System Settings';
+<<<<<<< HEAD
       case '/admin/reports':
         return 'Reports & Analytics';
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       default:
         return 'Dashboard';
     }
@@ -214,8 +247,11 @@ const AdminDashboard = () => {
         return 'Manage students, tutors, and administrators';
       case '/admin/settings':
         return 'Configure system settings and preferences';
+<<<<<<< HEAD
       case '/admin/reports':
         return 'View platform statistics and insights';
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       default:
         return `Welcome back, ${user?.firstName}!`;
     }
@@ -261,6 +297,7 @@ const AdminDashboard = () => {
             <span className="menu-icon">⚙️</span>
             <span className="menu-text">Settings</span>
           </button>
+<<<<<<< HEAD
 
           <button 
             className={`sidebar-menu-item ${activeMenu === 'reports' ? 'active' : ''}`}
@@ -269,6 +306,8 @@ const AdminDashboard = () => {
             <span className="menu-icon">📈</span>
             <span className="menu-text">Reports</span>
           </button>
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
         </nav>
 
         <div className="sidebar-footer">

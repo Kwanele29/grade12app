@@ -173,6 +173,49 @@ const Quizzes = () => {
     if (currentQuestion > 0) setCurrentQuestion(currentQuestion - 1);
   };
 
+<<<<<<< HEAD
+=======
+  const handleSubmitQuiz = async () => {
+    setTimerActive(false);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/quizzes/submit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: user.id,
+          quizId: selectedQuiz.id,
+          answers: selectedAnswers
+        })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const result = await response.json();
+      console.log('Quiz result:', result);
+      
+      const resultsData = {
+        obtainedMarks: result.obtainedMarks || result.score || 0,
+        totalMarks: result.totalMarks || selectedQuiz.totalMarks || 0,
+        percentage: result.percentage || Math.round(((result.obtainedMarks || result.score || 0) / (result.totalMarks || selectedQuiz.totalMarks || 1)) * 100),
+        studentName: result.studentName || user.firstName,
+        quizTitle: result.quizTitle || selectedQuiz.title,
+        subjectName: result.subjectName || selectedQuiz.subjectName
+      };
+      
+      setQuizResults(resultsData);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      alert('Error submitting quiz: ' + error.message);
+    }
+  };
+
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
   const handleBackToQuizzes = () => {
     setQuizStarted(false);
     setSelectedQuiz(null);

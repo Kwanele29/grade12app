@@ -82,8 +82,55 @@ const Subjects = () => {
     }
   }, [navigate, token, loadEnrolledSubjects]);
 
+<<<<<<< HEAD
   const handleSubjectClick = async (subject) => {
     setSelectedSubject(subject);
+=======
+    const savedSubjects = localStorage.getItem(`student_subjects_${parsedUser.id}`);
+    if (savedSubjects) {
+      const subjects = JSON.parse(savedSubjects);
+      setSelectedSubjects(subjects);
+      console.log('Student selected subjects from localStorage:', subjects);
+    }
+    
+    setLoading(false);
+  }, [navigate, token]);
+
+  // Get full subject details for selected subjects
+  const enrolledSubjects = selectedSubjects.map(selected => {
+    const fullDetails = allSubjectsData.find(sub => sub.id === selected.id);
+    console.log('Looking for subject ID:', selected.id, 'Found details:', fullDetails);
+    
+    if (fullDetails) {
+      return {
+        id: fullDetails.id,
+        name: fullDetails.name,
+        icon: fullDetails.iconUrl || selected.icon || '📚',
+        color: fullDetails.color || selected.color || '#66FCF1',
+        bgColor: fullDetails.bgColor || selected.bgColor || 'rgba(102, 252, 241, 0.1)',
+        tutorName: fullDetails.tutorName || 'Not Assigned',
+        tutorId: fullDetails.tutorId
+      };
+    }
+    return {
+      ...selected,
+      tutorName: selected.tutorName || 'Not Assigned',
+      tutorId: selected.tutorId
+    };
+  });
+
+  const handleSubjectClick = (subject) => {
+    const fullDetails = allSubjectsData.find(sub => sub.id === subject.id);
+    setSelectedSubject({
+      id: subject.id,
+      name: subject.name,
+      icon: subject.icon,
+      color: subject.color,
+      bgColor: subject.bgColor,
+      tutorName: fullDetails?.tutorName || subject.tutorName || 'Not Assigned',
+      tutorId: fullDetails?.tutorId || subject.tutorId
+    });
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     setActiveTab('papers');
     await fetchMaterialsForSubject(subject.id);
   };

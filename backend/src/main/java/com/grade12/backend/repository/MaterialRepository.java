@@ -1,6 +1,7 @@
 package com.grade12.backend.repository;
 
 import com.grade12.backend.model.Material;
+import com.grade12.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,11 +12,23 @@ import java.util.List;
 @Repository
 public interface MaterialRepository extends JpaRepository<Material, Long> {
     
+<<<<<<< HEAD
     List<Material> findByTutorId(Long tutorId);
     List<Material> findBySubjectId(Long subjectId);
     
     // ✅ Add this method to fix the TutorController error
     long countByTutorId(Long tutorId);
+=======
+    List<Material> findByTutor(User tutor);
+    
+    @Query("SELECT m FROM Material m WHERE m.tutor.id = :tutorId")
+    List<Material> findByTutorId(@Param("tutorId") Long tutorId);
+    
+    @Query("SELECT m FROM Material m WHERE m.tutor.id = :tutorId ORDER BY m.uploadedAt DESC")
+    List<Material> findByTutorIdOrderByUploadedAtDesc(@Param("tutorId") Long tutorId);
+    
+    List<Material> findBySubjectId(Long subjectId);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     
     // Other required methods (already discussed)
     long countByUploadedAtBetween(LocalDateTime start, LocalDateTime end);

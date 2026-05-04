@@ -1,12 +1,22 @@
 package com.grade12.backend.model;
 
 import jakarta.persistence.*;
+<<<<<<< HEAD
+=======
+import lombok.Data;
+import lombok.NoArgsConstructor;
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "quizzes")
+<<<<<<< HEAD
+=======
+@Data
+@NoArgsConstructor
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 public class Quiz {
 
     @Id
@@ -15,9 +25,15 @@ public class Quiz {
 
     @Column(nullable = false)
     private String title;
+<<<<<<< HEAD
 
     private String description;
 
+=======
+    
+    private String description;
+    
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @Column(name = "total_questions")
     private Integer totalQuestions;
 
@@ -28,6 +44,7 @@ public class Quiz {
     private Integer timeLimitMinutes;
 
     private String difficulty;
+<<<<<<< HEAD
 
     @Column(nullable = false)
     private String status = "DRAFT";
@@ -39,6 +56,13 @@ public class Quiz {
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
+=======
+    
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+    
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @ManyToOne
     @JoinColumn(name = "tutor_id")
     @JsonIgnore
@@ -49,6 +73,7 @@ public class Quiz {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+<<<<<<< HEAD
 
     public Quiz() {}
 
@@ -56,6 +81,12 @@ public class Quiz {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) status = "DRAFT";
+=======
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     }
 
     public Long getId() { return id; }

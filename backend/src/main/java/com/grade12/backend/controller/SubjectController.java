@@ -24,7 +24,6 @@ public class SubjectController {
     @Autowired
     private UserRepository userRepository;
     
-    // Get all subjects with tutor information
     @GetMapping
     public ResponseEntity<?> getAllSubjects() {
         try {
@@ -41,8 +40,12 @@ public class SubjectController {
                 subjectMap.put("description", subject.getDescription());
                 subjectMap.put("tutorId", subject.getTutorId());
                 
+<<<<<<< HEAD
                 // Add tutor name if tutor exists
                 if (subject.getTutorId() != null && subject.getTutorId() > 0) {
+=======
+                if (subject.getTutorId() != null) {
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
                     User tutor = userRepository.findById(subject.getTutorId()).orElse(null);
                     if (tutor != null) {
                         subjectMap.put("tutorName", tutor.getFirstName() + " " + tutor.getLastName());
@@ -64,6 +67,7 @@ public class SubjectController {
         }
     }
     
+<<<<<<< HEAD
     // Get all subjects with tutors (for the Subjects page)
     @GetMapping("/with-tutors")
     public ResponseEntity<?> getAllSubjectsWithTutors() {
@@ -105,6 +109,8 @@ public class SubjectController {
     }
     
     // Get subject by ID
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @GetMapping("/{id}")
     public ResponseEntity<?> getSubjectById(@PathVariable Long id) {
         return subjectRepository.findById(id)
@@ -132,6 +138,7 @@ public class SubjectController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+<<<<<<< HEAD
     // Get subjects by tutor ID
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<?> getSubjectsByTutor(@PathVariable Long tutorId) {
@@ -160,6 +167,8 @@ public class SubjectController {
     }
     
     // Create new subject
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     @PostMapping
     public ResponseEntity<?> createSubject(@RequestBody Subject subject) {
         try {
@@ -181,7 +190,6 @@ public class SubjectController {
         }
     }
     
-    // Update subject
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSubject(@PathVariable Long id, @RequestBody Subject subjectDetails) {
         try {
@@ -216,9 +224,9 @@ public class SubjectController {
         }
     }
     
-    // Delete subject
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSubject(@PathVariable Long id) {
+<<<<<<< HEAD
         try {
             return subjectRepository.findById(id)
                     .map(subject -> {
@@ -364,5 +372,13 @@ public class SubjectController {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+=======
+        return subjectRepository.findById(id)
+                .map(subject -> {
+                    subjectRepository.delete(subject);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     }
 }

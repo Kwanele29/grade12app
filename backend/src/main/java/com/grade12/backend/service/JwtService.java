@@ -28,11 +28,14 @@ public class JwtService {
     @Value("${jwt.refresh-expiration}")
     private Long refreshExpiration;
     
+<<<<<<< HEAD
     private Key getSignInKey() {
         byte[] keyBytes = secretKey.getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
     }
     
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     public String extractUsername(String token) {
         try {
             return extractClaim(token, Claims::getSubject);
@@ -47,6 +50,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
     
+<<<<<<< HEAD
     private Claims extractAllClaims(String token) {
         try {
             return Jwts.parserBuilder()
@@ -77,6 +81,9 @@ public class JwtService {
     }
     
     // Token generation for UserDetails
+=======
+    // For UserDetails
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
@@ -141,7 +148,43 @@ public class JwtService {
         }
     }
     
+<<<<<<< HEAD
     public boolean validateToken(String token, UserDetails userDetails) {
         return isTokenValid(token, userDetails);
     }
+=======
+    private boolean isTokenExpired(String token) {
+        try {
+            Date expiration = extractExpiration(token);
+            boolean expired = expiration.before(new Date());
+            System.out.println("Token expiration: " + expiration + ", Expired: " + expired);
+            return expired;
+        } catch (ExpiredJwtException e) {
+            System.out.println("Token is expired");
+            return true;
+        }
+    }
+    
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+    
+    private Claims extractAllClaims(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignInKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            System.out.println("Returning claims from expired token");
+            return e.getClaims();
+        }
+    }
+    
+    private Key getSignInKey() {
+        byte[] keyBytes = secretKey.getBytes();
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 }

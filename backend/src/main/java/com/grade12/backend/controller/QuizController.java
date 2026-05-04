@@ -27,7 +27,11 @@ public class QuizController {
     private final UserRepository userRepository;
     private final StudentSubjectRepository studentSubjectRepository;
     
+<<<<<<< HEAD
     // ==================== TUTOR QUIZ ENDPOINTS ====================
+=======
+    // ==================== TUTOR QUIZ ENDPOINTS (YOUR WORKING CODE) ====================
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     
     @PostMapping("/upload")
     public ResponseEntity<?> uploadQuiz(@RequestBody QuizUploadDTO uploadDTO) {

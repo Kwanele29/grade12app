@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
 import './AdminSettings.css';
 
 const AdminSettings = () => {
   const navigate = useNavigate();
+=======
+import './AdminSettings.css';
+
+const AdminSettings = () => {
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
   const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState({
     general: {
@@ -98,6 +104,7 @@ const AdminSettings = () => {
 
   return (
     <div className="admin-settings">
+<<<<<<< HEAD
       {/* Back Button */}
       <div className="settings-back-btn">
         <button onClick={() => navigate('/admin-dashboard')} className="back-btn">
@@ -105,6 +112,8 @@ const AdminSettings = () => {
         </button>
       </div>
 
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       {/* Header */}
       <div className="settings-header">
         <div>

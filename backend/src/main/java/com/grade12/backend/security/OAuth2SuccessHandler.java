@@ -6,6 +6,10 @@ import com.grade12.backend.model.User;
 import com.grade12.backend.repository.TutorRepository;
 import com.grade12.backend.repository.UserRepository;
 import com.grade12.backend.service.JwtService;
+<<<<<<< HEAD
+=======
+import jakarta.servlet.ServletException;
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +35,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                        Authentication authentication) throws IOException {
+                                        Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = (String) oAuth2User.getAttributes().get("email");
         String name = (String) oAuth2User.getAttributes().get("name");
@@ -90,6 +94,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String redirectUrl = String.format("http://localhost:3000/login?token=%s&refreshToken=%s&user=%s",
                 token, refreshToken, encodedUserJson);
 
+<<<<<<< HEAD
+=======
+        System.out.println("✅ OAuth2 login successful for: " + email);
+        System.out.println("Redirect URL: " + redirectUrl);
+
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }

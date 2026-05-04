@@ -19,7 +19,7 @@ const Home = () => {
       {/* Navigation */}
       <nav className="navbar">
         <div className="nav-logo">
-          <h1>Grade 12 Central</h1>
+          <h1>Grade<span>12</span>Central</h1>
         </div>
         <ul className="nav-menu">
           <li><a href="/" className="active">Home</a></li>
@@ -37,11 +37,8 @@ const Home = () => {
         </div>
       </nav>
 
-      {/* Hero Section with City Background */}
-      <section 
-        className="hero-section" 
-        style={{ backgroundImage: `url(${cityBg})` }}
-      >
+      {/* Hero Section */}
+      <section className="hero-section">
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1>Ace Your Matric Year with <span className="highlight">Grade 12 Central!</span></h1>
@@ -52,11 +49,11 @@ const Home = () => {
         </div>
         <div className="hero-image">
           <div className="image-container">
-            <img 
-              src="/images/late-night study session illuminated.png" 
-              alt="Student studying late night" 
-              className="hero-img" 
-            />
+            <div className="hero-img-wrapper">
+              <div className="hero-img-placeholder">
+                <div className="glow-effect"></div>
+              </div>
+            </div>
             <div className="image-glow"></div>
           </div>
         </div>
@@ -180,7 +177,7 @@ const Home = () => {
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>Grade 12 Central</h3>
+            <h3>Grade<span>12</span>Central</h3>
             <p>Your ultimate exam preparation partner</p>
           </div>
           <div className="footer-section">
@@ -203,7 +200,7 @@ const Home = () => {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2024 Grade 12 Central. All rights reserved.</p>
+          <p>&copy; 2026 Grade 12 Central. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
 import './AdminUsers.css';
 
@@ -7,6 +8,13 @@ const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+=======
+import './AdminUsers.css';
+
+const AdminUsers = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -24,8 +32,11 @@ const AdminUsers = () => {
   }, []);
 
   const fetchUsers = async () => {
+<<<<<<< HEAD
     setLoading(true);
     setError('');
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8080/api/admin/users', {
@@ -38,6 +49,7 @@ const AdminUsers = () => {
         const usersData = Array.isArray(data) ? data : (data.users || data.data || []);
         setUsers(usersData);
       } else {
+<<<<<<< HEAD
         const errorText = await response.text();
         setError(`Failed to load users: ${response.status} ${errorText}`);
         setUsers([]);
@@ -46,6 +58,14 @@ const AdminUsers = () => {
       console.error('Error fetching users:', error);
       setError('Network error – unable to fetch users from database.');
       setUsers([]);
+=======
+        console.error('Failed to fetch users from database');
+        setUsers(mockUsers);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setUsers(mockUsers);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     } finally {
       setLoading(false);
     }
@@ -140,30 +160,61 @@ const AdminUsers = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleSearchChange = (e) => {
+=======
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    console.log('Search input changed:', e.target.value);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     setSearchTerm(e.target.value);
   };
 
   const getFilteredUsers = () => {
     let filtered = users;
     
+<<<<<<< HEAD
+=======
+    // Apply category filter
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     if (filter !== 'all') {
       filtered = filtered.filter(user => user.category === filter);
     }
     
+<<<<<<< HEAD
     if (searchTerm.trim() !== '') {
       const searchLower = searchTerm.toLowerCase().trim();
+=======
+    // Apply search filter
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim();
+      console.log('Searching for:', searchLower);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       filtered = filtered.filter(user => {
         const firstName = (user.firstName || '').toLowerCase();
         const lastName = (user.lastName || '').toLowerCase();
         const email = (user.email || '').toLowerCase();
         const fullName = (firstName + ' ' + lastName).toLowerCase();
         
+<<<<<<< HEAD
         return firstName.includes(searchLower) ||
                lastName.includes(searchLower) ||
                fullName.includes(searchLower) ||
                email.includes(searchLower);
       });
+=======
+        const matches = firstName.includes(searchLower) ||
+               lastName.includes(searchLower) ||
+               fullName.includes(searchLower) ||
+               email.includes(searchLower);
+        
+        if (matches) {
+          console.log('Found match:', user.firstName, user.lastName);
+        }
+        return matches;
+      });
+      console.log('Filtered users count:', filtered.length);
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
     }
     
     return filtered;
@@ -184,6 +235,7 @@ const AdminUsers = () => {
 
   return (
     <div className="admin-users">
+<<<<<<< HEAD
       {/* Back Button */}
       <div className="settings-back-btn">
         <button onClick={() => navigate('/admin-dashboard')} className="back-btn">
@@ -191,6 +243,8 @@ const AdminUsers = () => {
         </button>
       </div>
 
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       <div className="users-header">
         <div>
           <h1>User Management</h1>
@@ -201,12 +255,15 @@ const AdminUsers = () => {
         </button>
       </div>
 
+<<<<<<< HEAD
       {error && (
         <div className="error-message" style={{ background: 'rgba(245,101,101,0.2)', color: '#f56565', padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
           ⚠️ {error}
         </div>
       )}
 
+=======
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
       <div className="users-controls">
         <div className="filter-buttons">
           <button 
@@ -238,11 +295,32 @@ const AdminUsers = () => {
         <div className="search-box">
           <input
             type="text"
+<<<<<<< HEAD
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={handleSearchChange}
           />
           <span className="search-icon">🔍</span>
+=======
+            id="user-search-input"
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onClick={() => console.log('Search input clicked')}
+            onFocus={() => console.log('Search input focused')}
+            style={{ 
+              padding: '10px 40px 10px 16px',
+              border: '1px solid rgba(102, 252, 241, 0.2)',
+              borderRadius: '8px',
+              background: '#1F2833',
+              color: '#C5C6C7',
+              width: '280px'
+            }}
+          />
+          <span className="search-icon" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+            🔍
+          </span>
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
         </div>
       </div>
 
@@ -430,4 +508,43 @@ const AdminUsers = () => {
   );
 };
 
+<<<<<<< HEAD
+=======
+// Mock data for demonstration (fallback only)
+const mockUsers = [
+  {
+    id: 1,
+    firstName: 'Thabo',
+    lastName: 'Mokoena',
+    email: 'thabo.mokoena@example.com',
+    category: 'student',
+    createdAt: '2024-01-15T10:00:00Z'
+  },
+  {
+    id: 2,
+    firstName: 'Sarah',
+    lastName: 'Johnson',
+    email: 'sarah.johnson@example.com',
+    category: 'tutor',
+    createdAt: '2024-01-10T09:00:00Z'
+  },
+  {
+    id: 3,
+    firstName: 'Mike',
+    lastName: 'Smith',
+    email: 'mike.smith@example.com',
+    category: 'admin',
+    createdAt: '2024-01-05T08:00:00Z'
+  },
+  {
+    id: 4,
+    firstName: 'Lerato',
+    lastName: 'Ndlovu',
+    email: 'lerato.ndlovu@example.com',
+    category: 'student',
+    createdAt: '2024-01-20T11:00:00Z'
+  }
+];
+
+>>>>>>> b00dc9b5eafab1d37315949149f2e9fb146c3734
 export default AdminUsers;
