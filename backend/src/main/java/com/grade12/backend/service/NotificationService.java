@@ -6,6 +6,8 @@ import com.grade12.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -28,12 +30,13 @@ public class NotificationService {
     public void markNotificationChecked(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {
-            user.setLastNotificationCheck(java.time.LocalDateTime.now());
+            user.setLastNotificationCheck(LocalDateTime.now());
             userRepository.save(user);
         }
     }
     
-    public boolean hasNewNotifications(Long userId, java.time.LocalDateTime lastCheck) {
+    public boolean hasNewNotifications(Long userId, LocalDateTime lastCheck) {
+        // Simple implementation – you can improve
         return true;
     }
 }

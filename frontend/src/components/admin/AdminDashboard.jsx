@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './AdminDashboard.css';
 import AdminUsers from './AdminUsers';
 import AdminSettings from './AdminSettings';
+import AdminReports from './AdminReports';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -46,6 +47,8 @@ const AdminDashboard = () => {
       setActiveMenu('users');
     } else if (path === '/admin/settings') {
       setActiveMenu('settings');
+    } else if (path === '/admin/reports') {
+      setActiveMenu('reports');
     }
   }, [location]);
 
@@ -85,6 +88,9 @@ const AdminDashboard = () => {
       case 'settings':
         navigate('/admin/settings');
         break;
+      case 'reports':
+        navigate('/admin/reports');
+        break;
       default:
         break;
     }
@@ -99,6 +105,8 @@ const AdminDashboard = () => {
         return <AdminUsers />;
       case '/admin/settings':
         return <AdminSettings />;
+      case '/admin/reports':
+        return <AdminReports />;
       default:
         return (
           <>
@@ -191,6 +199,8 @@ const AdminDashboard = () => {
         return 'User Management';
       case '/admin/settings':
         return 'System Settings';
+      case '/admin/reports':
+        return 'Reports & Analytics';
       default:
         return 'Dashboard';
     }
@@ -204,6 +214,8 @@ const AdminDashboard = () => {
         return 'Manage students, tutors, and administrators';
       case '/admin/settings':
         return 'Configure system settings and preferences';
+      case '/admin/reports':
+        return 'View platform statistics and insights';
       default:
         return `Welcome back, ${user?.firstName}!`;
     }
@@ -248,6 +260,14 @@ const AdminDashboard = () => {
           >
             <span className="menu-icon">⚙️</span>
             <span className="menu-text">Settings</span>
+          </button>
+
+          <button 
+            className={`sidebar-menu-item ${activeMenu === 'reports' ? 'active' : ''}`}
+            onClick={() => handleMenuClick('reports')}
+          >
+            <span className="menu-icon">📈</span>
+            <span className="menu-text">Reports</span>
           </button>
         </nav>
 

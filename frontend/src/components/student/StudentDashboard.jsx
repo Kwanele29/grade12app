@@ -115,6 +115,8 @@ const StudentDashboard = () => {
             <span className="menu-icon">📝</span>
             <span className="menu-text">Quizzes</span>
           </button>
+
+         
         </div>
 
         <div className="sidebar-footer-modern">
@@ -217,6 +219,7 @@ const StudentDashboard = () => {
                 <h3>My Subjects</h3>
                 <p>View your enrolled subjects</p>
               </div>
+             
             </div>
 
             {/* Subjects List */}

@@ -49,4 +49,12 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
     
     // Find the most recent attempt for a student on a quiz
     Optional<QuizAttempt> findTopByStudentIdAndQuizIdOrderByStartedAtDesc(Long studentId, Long quizId);
+    
+    // Count total attempts for a quiz (all statuses)
+    @Query("SELECT COUNT(qa) FROM QuizAttempt qa WHERE qa.quiz.id = :quizId")
+    long countByQuizId(@Param("quizId") Long quizId);
+    
+    // Get average percentage by subject ID (for subject-scores report)
+    @Query("SELECT AVG(qa.percentage) FROM QuizAttempt qa WHERE qa.quiz.subject.id = :subjectId AND qa.status = 'COMPLETED'")
+    Double getAveragePercentageBySubjectId(@Param("subjectId") Long subjectId);
 }

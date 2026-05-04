@@ -6,6 +6,37 @@
   min-height: 100vh;
 }
 
+/* Back Button Container & Box Styling */
+.settings-back-btn {
+  margin-bottom: 1.5rem;
+}
+
+.settings-back-btn .back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
+  color: #0B0C10;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.settings-back-btn .back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 252, 241, 0.3);
+  background: linear-gradient(135deg, #45A29E, #66FCF1);
+}
+
+.settings-back-btn .back-btn:active {
+  transform: translateY(0);
+}
+
 /* Header */
 .settings-header {
   display: flex;
@@ -314,29 +345,4 @@ input:checked + .toggle-slider:before {
     align-items: flex-start;
     gap: 12px;
   }
-  /* Add to AdminSettings.css */
-
-.settings-back-btn {
-  margin-bottom: 20px;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  color: #667eea;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: all 0.3s;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 500;
-}
-
-.back-btn:hover {
-  background: #f7fafc;
-  transform: translateX(-2px);
-}
 }

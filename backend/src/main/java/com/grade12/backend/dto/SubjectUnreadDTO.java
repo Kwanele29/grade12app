@@ -1,8 +1,12 @@
 package com.grade12.backend.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class SubjectUnreadDTO {
     private Long subjectId;
     private String subjectName;

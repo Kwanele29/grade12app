@@ -1,291 +1,505 @@
-/* Additional styles for improved UI */
+/* ========== GLOBAL & CONTAINER ========== */
+.messages-container {
+  min-height: 100vh;
+  background: #0B0C10;
+  padding: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.messages-card {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #1F2833;
+  border-radius: 24px;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+/* ========== HEADER ========== */
+.messages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background: #1F2833;
+  border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.messages-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: 0;
+}
+
+.back-btn {
+  background: #0B0C10;
+  border: 1px solid rgba(102, 252, 241, 0.3);
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #C5C6C7;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: #45A29E;
+  color: #0B0C10;
+  transform: translateX(-2px);
+}
+
+.header-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #C5C6C7;
+  background: #0B0C10;
+  padding: 6px 14px;
+  border-radius: 40px;
+  align-items: center;
+  border: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+.connection-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.connection-dot.online {
+  background: #45A29E;
+  box-shadow: 0 0 0 2px rgba(69, 162, 158, 0.5);
+}
+
+.connection-dot.offline {
+  background: #f56565;
+  box-shadow: 0 0 0 2px rgba(245, 101, 101, 0.5);
+}
+
+/* ========== MAIN CONTENT (2 COLUMNS) ========== */
+.messages-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ---------- STUDENTS LIST (LEFT) ---------- */
+.students-list {
+  width: 320px;
+  background: #0B0C10;
+  border-right: 1px solid rgba(102, 252, 241, 0.2);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.students-list-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+}
+
+.students-list-header h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #66FCF1;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(102, 252, 241, 0.3);
+  border-radius: 40px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+  background: #1F2833;
+  color: #C5C6C7;
+}
+
+.search-box input:focus {
+  border-color: #66FCF1;
+  box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.2);
+}
+
+.students-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.student-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 6px;
+}
+
+.student-item:hover {
+  background: #1F2833;
+}
+
+.student-item.active {
+  background: rgba(102, 252, 241, 0.1);
+  border-left: 3px solid #66FCF1;
+}
+
+.student-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  color: #0B0C10;
+  position: relative;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
+}
+
+.student-avatar.large {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: #45A29E;
+  border: 2px solid #1F2833;
+  border-radius: 50%;
+}
+
+.student-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #C5C6C7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.unread-badge {
+  background: #f56565;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 30px;
+}
+
+.student-last-message {
+  font-size: 13px;
+  color: #C5C6C7;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.student-time {
+  font-size: 11px;
+  color: #C5C6C7;
+  opacity: 0.5;
+  margin-top: 4px;
+}
+
+.no-students {
+  text-align: center;
+  padding: 40px 20px;
+  color: #C5C6C7;
+  opacity: 0.7;
+  font-size: 14px;
+}
+
+/* ---------- CHAT AREA (RIGHT) ---------- */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0B0C10;
+  position: relative;
+}
+
+.chat-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+  background: #1F2833;
+}
+
+.chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chat-header-info h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #C5C6C7;
+}
+
 .student-details {
   display: flex;
   gap: 12px;
   align-items: center;
   margin-top: 5px;
+  flex-wrap: wrap;
 }
 
 .student-subject {
   font-size: 12px;
-  color: #667eea;
-  background: #eff6ff;
-  padding: 2px 8px;
-  border-radius: 12px;
+  color: #66FCF1;
+  background: rgba(102, 252, 241, 0.1);
+  padding: 4px 10px;
+  border-radius: 30px;
+  font-weight: 500;
 }
 
-.loading-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-size: 18px;
-}
-
-/* Connection status indicator */
-.connection-status {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 8px 16px;
-  border-radius: 20px;
+.status {
   font-size: 12px;
   font-weight: 500;
-  z-index: 1000;
 }
 
-.connection-status.online {
-  background: #48bb78;
-  color: white;
+.status.online {
+  color: #45A29E;
 }
 
-.connection-status.offline {
-  background: #f56565;
-  color: white;
-}
-
-/* Message input area enhancements */
-.message-input-area {
-  position: relative;
-}
-
-.message-input-area textarea:disabled {
-  background: #f7fafc;
-  cursor: not-allowed;
-}
-
-.send-btn:disabled {
+.status.offline {
+  color: #C5C6C7;
   opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+}
+
+/* Messages list */
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #0B0C10;
+}
+
+.message {
+  display: flex;
+  animation: slideIn 0.2s ease;
+}
+
+.message.sent {
+  justify-content: flex-end;
+}
+
+.message.received {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  position: relative;
+  word-wrap: break-word;
+  transition: transform 0.15s;
+}
+
+.message.sent .message-bubble {
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
+  color: #0B0C10;
+  border-bottom-right-radius: 4px;
+}
+
+.message.received .message-bubble {
+  background: #1F2833;
+  color: #C5C6C7;
+  border-bottom-left-radius: 4px;
+}
+
+.message-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.message-time {
+  font-size: 10px;
+}
+
+.message-status {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.message-status.sending {
+  color: #f59e0b;
+}
+
+.message-status.sent {
+  color: #45A29E;
+}
+
+.message-retry {
+  background: none;
+  border: none;
+  color: #f56565;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* No messages / empty state */
+.no-messages, .no-student-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #C5C6C7;
+  opacity: 0.7;
+  padding: 40px;
+}
+
+.no-messages-icon, .no-student-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.no-messages-sub {
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 /* Typing indicator */
 .typing-indicator {
   padding: 8px 16px;
   font-size: 12px;
-  color: #718096;
+  color: #C5C6C7;
+  opacity: 0.7;
   font-style: italic;
+  animation: fadeIn 0.3s;
 }
 
-/* Message hover effects */
-.message-bubble {
-  transition: all 0.2s ease;
+/* Message input area */
+.message-input-area {
+  padding: 16px 24px;
+  background: #1F2833;
+  border-top: 1px solid rgba(102, 252, 241, 0.2);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
 }
 
-.message-bubble:hover {
-  transform: scale(1.02);
+.message-input-area textarea {
+  flex: 1;
+  border: 1px solid rgba(102, 252, 241, 0.3);
+  border-radius: 24px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  transition: 0.2s;
+  background: #0B0C10;
+  color: #C5C6C7;
 }
 
-/* Emoji picker support (optional) */
-.emoji-picker {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  margin-bottom: 10px;
-  z-index: 100;
+.message-input-area textarea:focus {
+  border-color: #66FCF1;
+  box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.2);
 }
 
-/* File attachment button (optional) */
-.attach-btn {
-  background: none;
+.send-btn {
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
   border: none;
-  font-size: 20px;
+  padding: 10px 24px;
+  border-radius: 40px;
+  color: #0B0C10;
+  font-weight: 600;
   cursor: pointer;
-  padding: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.send-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(102, 252, 241, 0.5);
+}
+
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading state */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0B0C10;
+  color: #66FCF1;
+  font-size: 18px;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(102, 252, 241, 0.3);
+  border-top-color: #66FCF1;
   border-radius: 50%;
-  transition: all 0.3s;
-  color: #718096;
+  animation: spin 0.8s linear infinite;
 }
 
-.attach-btn:hover {
-  background: #f7fafc;
-  transform: scale(1.1);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-/* Message search highlight */
-.search-highlight {
-  background: #fef9c3;
-  padding: 0 2px;
-  border-radius: 2px;
-}
-
-/* Responsive improvements */
-@media (max-width: 768px) {
-  .student-details {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .chat-header-info {
-    flex-wrap: wrap;
-  }
-  
-  .header-stats {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .messages-header {
-    padding: 15px;
-  }
-  
-  .messages-header h1 {
-    font-size: 20px;
-  }
-}
-
-/* Animation for new messages */
-@keyframes messagePulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.message.new {
-  animation: messagePulse 0.3s ease;
-}
-
-/* Read receipt styling */
-.message-read-status {
-  display: inline-block;
-  margin-left: 4px;
-  font-size: 10px;
-}
-
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  .messages-card {
-    background: #1a202c;
-  }
-  
-  .messages-header {
-    background: #1a202c;
-    border-bottom-color: #2d3748;
-  }
-  
-  .messages-header h1 {
-    color: #f7fafc;
-  }
-  
-  .student-item {
-    border-bottom-color: #2d3748;
-  }
-  
-  .student-item:hover {
-    background: #2d3748;
-  }
-  
-  .student-name {
-    color: #f7fafc;
-  }
-  
-  .message.received .message-bubble {
-    background: #2d3748;
-    color: #f7fafc;
-    border-color: #4a5568;
-  }
-  
-  .message-input-area textarea {
-    background: #2d3748;
-    border-color: #4a5568;
-    color: #f7fafc;
-  }
-  /* Connection warning */
-.connection-warning {
-  position: absolute;
-  bottom: 80px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  padding: 8px;
-  background: #fef9c3;
-  color: #854d0e;
-  font-size: 12px;
-  font-weight: 500;
-  border-top: 1px solid #fde047;
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-/* Typing Indicator */
-.typing-indicator {
-  padding: 8px 16px;
-  font-size: 12px;
-  color: #718096;
-  font-style: italic;
-  animation: fadeIn 0.3s ease;
-}
-
-.typing-indicator span {
-  display: inline-block;
-  position: relative;
-}
-
-.typing-indicator span::after {
-  content: '...';
-  position: absolute;
-  animation: typingDots 1.4s infinite;
-}
-
-@keyframes typingDots {
-  0%, 20% {
-    content: '.';
-  }
-  40%, 60% {
-    content: '..';
-  }
-  80%, 100% {
-    content: '...';
-  }
-}
-
-/* Connection Status */
-.connection-warning {
-  position: absolute;
-  bottom: 80px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  padding: 8px;
-  background: #fef9c3;
-  color: #854d0e;
-  font-size: 12px;
-  font-weight: 500;
-  border-top: 1px solid #fde047;
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/* Message Animations */
-.message {
-  animation: slideIn 0.3s ease;
-}
-
+/* ========== ANIMATIONS ========== */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -297,30 +511,40 @@
   }
 }
 
-/* Student Details */
-.student-details {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-top: 5px;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.student-subject {
-  font-size: 12px;
-  color: #667eea;
-  background: #eff6ff;
-  padding: 2px 8px;
-  border-radius: 12px;
-}
+/* ========== DARK MODE (already dark) – keep as is ========== */
+/* No extra dark mode needed because the theme is already dark */
 
-/* Loading Container */
-.loading-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-size: 18px;
-}
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .messages-container {
+    padding: 10px;
+  }
+  .messages-content {
+    flex-direction: column;
+  }
+  .students-list {
+    width: 100%;
+    max-height: 280px;
+    border-right: none;
+    border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+  }
+  .chat-header-info {
+    flex-wrap: wrap;
+  }
+  .message-bubble {
+    max-width: 85%;
+  }
+  .messages-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .header-stats {
+    justify-content: center;
+  }
 }

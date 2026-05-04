@@ -122,13 +122,38 @@ body {
   padding: 1.5rem;
 }
 
-.subjects-sidebar h2 {
-  font-size: 18px;
-  color: var(--accent-cyan);
+/* Sidebar header with title and edit button */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--accent-cyan);
-  display: inline-block;
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  color: var(--accent-cyan);
+  margin: 0;
+}
+
+.edit-subjects-btn {
+  background: rgba(102, 252, 241, 0.1);
+  border: 1px solid rgba(102, 252, 241, 0.3);
+  color: var(--accent-cyan);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.edit-subjects-btn:hover {
+  background: rgba(102, 252, 241, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px var(--accent-cyan-glow);
 }
 
 .subjects-list {

@@ -66,11 +66,6 @@ public class User {
     @JsonIgnore
     private List<Quiz> quizzes;
     
-    // REMOVE THIS DIRECT MAPPING - it's causing the error
-    // @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // @JsonIgnore
-    // private List<QuizAttempt> quizAttempts;
-    
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private Student studentProfile;

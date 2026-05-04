@@ -27,7 +27,7 @@ public class QuizController {
     private final UserRepository userRepository;
     private final StudentSubjectRepository studentSubjectRepository;
     
-    // ==================== TUTOR QUIZ ENDPOINTS (YOUR WORKING CODE) ====================
+    // ==================== TUTOR QUIZ ENDPOINTS ====================
     
     @PostMapping("/upload")
     public ResponseEntity<?> uploadQuiz(@RequestBody QuizUploadDTO uploadDTO) {
@@ -105,6 +105,25 @@ public class QuizController {
             List<QuizResponseDTO> quizzes = quizService.getAllQuizzesForStudents();
             System.out.println("Found " + quizzes.size() + " quizzes");
             return ResponseEntity.ok(quizzes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * NEW ENDPOINT: Fetch a single quiz by ID (including its questions)
+     * Used when a student clicks "Start Quiz"
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getQuizById(@PathVariable Long id) {
+        try {
+            System.out.println("Fetching quiz by ID: " + id);
+            Quiz quiz = quizService.getQuizById(id);
+            if (quiz == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(quiz);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());

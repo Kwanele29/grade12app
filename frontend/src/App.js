@@ -11,12 +11,15 @@ import StudentSubjectSelection from './components/student/StudentSubjectSelectio
 import Subjects from './components/student/Subjects';
 import TutorDashboard from './components/tutor/TutorDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import AdminReports from './components/admin/AdminReports';
 import Quizzes from './components/student/Quizzes';
 import Material from './components/tutor/Material';
 import TutorSessions from './components/tutor/TutorSessions';
 import TutorQuizzes from './components/tutor/TutorQuizzes';
 import TutorFeedback from './components/tutor/TutorFeedback';
 import TutorMessages from './components/tutor/TutorMessages';
+
+
 
 // Admin Component Imports (Essential only)
 import AdminUsers from './components/admin/AdminUsers';
@@ -163,6 +166,7 @@ function App() {
                             <Subjects />
                         </ProtectedRoute>
                     } />
+
                     
                     {/* ==================== TUTOR ROUTES ==================== */}
                     {/* Tutor Subject Selection - First page after login for new tutors */}
@@ -242,6 +246,11 @@ function App() {
                             <AdminSettings />
                         </ProtectedRoute>
                     } />
+                    <Route path="/admin/reports" element={
+  <ProtectedRoute allowedRoles={['admin']}>
+    <AdminReports />
+  </ProtectedRoute>
+} />
                     
                     {/* Test Route */}
                     <Route path="/test-quizzes" element={<TestQuizzes />} />

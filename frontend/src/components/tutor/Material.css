@@ -1,10 +1,128 @@
-/* Add to your existing Material.css */
+/* Material.css – full styling for Material component */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #667eea;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.header button:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+}
+
+/* Messages */
+.error-msg {
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.success-msg {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  color: #276749;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Upload Form */
+.form {
+  background: #f7fafc;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 30px;
+  border: 1px solid #e2e8f0;
+}
+
+.form h3 {
+  margin: 0 0 20px 0;
+  color: #2d3748;
+  font-size: 20px;
+}
+
+.form input:not([type="file"]),
+.form select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form input:focus,
+.form select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form input[type="file"] {
+  padding: 10px 0;
+  border: none;
+}
+
+.form button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+  margin-top: 10px;
+}
+
+.form button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.form button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Subject dropdown */
+.subject-box {
+  position: relative;
+  margin-bottom: 15px;
+}
 
 .subject-input-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
   width: 100%;
 }
 
@@ -35,20 +153,10 @@
   transform: scale(0.98);
 }
 
-.no-results {
-  color: #999;
-  font-style: italic;
-  cursor: default;
-  text-align: center;
-}
-
-.no-results:hover {
-  background: transparent;
-}
-
-/* Make sure dropdown appears above other elements */
 .dropdown {
   position: absolute;
+  top: 100%;
+  left: 0;
   width: 100%;
   background: white;
   border: 1px solid #ddd;
@@ -67,4 +175,96 @@
 
 .dropdown-item:hover {
   background: #f0f0f0;
+}
+
+/* Materials list */
+.materials {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #2d3748;
+}
+
+.card .badge {
+  display: inline-block;
+  background: #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 12px;
+}
+
+.card .actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.card .actions a,
+.card .actions button {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card .actions a {
+  background: #667eea;
+  color: white;
+  border: none;
+}
+
+.card .actions a:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+}
+
+.card .actions button {
+  background: #f56565;
+  color: white;
+  border: none;
+}
+
+.card .actions button:hover {
+  background: #e53e3e;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  .materials {
+    grid-template-columns: 1fr;
+  }
+  .form {
+    padding: 20px;
+  }
 }

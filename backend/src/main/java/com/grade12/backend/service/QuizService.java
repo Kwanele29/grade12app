@@ -368,4 +368,8 @@ public class QuizService {
         
         return stats;
     }
+    public Quiz getQuizById(Long id) {
+    return quizRepository.findByIdWithQuestions(id)
+        .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + id));
+}
 }

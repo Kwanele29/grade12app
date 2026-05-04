@@ -87,7 +87,7 @@ const Quizzes = () => {
     fetchData();
   }, [navigate]);
 
-  // Define handleSubmitQuiz with useCallback
+  // ✅ Wrap handleSubmitQuiz in useCallback
   const handleSubmitQuiz = useCallback(async () => {
     setTimerActive(false);
     
@@ -100,7 +100,7 @@ const Quizzes = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          studentId: user?.id,
+          studentId: user?.id,   // ensure user exists
           quizId: selectedQuiz?.id,
           answers: selectedAnswers
         })
@@ -128,7 +128,7 @@ const Quizzes = () => {
     }
   }, [user, selectedQuiz, selectedAnswers]);
 
-  // Timer effect with handleSubmitQuiz as dependency
+  // Timer effect – now includes handleSubmitQuiz as dependency
   useEffect(() => {
     let interval;
     if (timerActive && timeRemaining > 0) {

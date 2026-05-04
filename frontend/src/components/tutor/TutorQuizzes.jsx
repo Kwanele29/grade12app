@@ -1,22 +1,37 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './TutorQuizzes.css';
 
-const TutorQuizzes  = () => {
+const TutorQuizzes = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [allSubjects, setAllSubjects] = useState([]);
-  const [filteredQuizzes, setFilteredQuizzes] = useState([]);
-  const [selectedSubject, setSelectedSubject] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    subjectId: '',
+    timeLimitMinutes: 30,
+    difficulty: 'medium',
+    questions: []
+  });
+  const [currentQuestion, setCurrentQuestion] = useState({
+    question: '',
+    optionA: '',
+    optionB: '',
+    optionC: '',
+    optionD: '',
+    correctOption: 0,
+    marks: 1
+  });
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -32,12 +47,12 @@ const TutorQuizzes  = () => {
     
     try {
       const parsedUser = JSON.parse(userData);
-      if (parsedUser.category !== 'student') {
+      if (parsedUser.category !== 'tutor') {
         navigate('/login');
         return;
       }
       setUser(parsedUser);
-      fetchQuizzes(parsedUser.id);
+      fetchTutorQuizzes(parsedUser.id);
       fetchSubjects();
     } catch (error) {
       console.error('Error parsing user data:', error);
@@ -45,146 +60,188 @@ const TutorQuizzes  = () => {
     }
   }, [navigate]);
 
-  // Fetch quizzes
-  const fetchQuizzes = async (studentId) => {
+  // Fetch quizzes created by this tutor
+  const fetchTutorQuizzes = async (tutorId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/quizzes/student/${studentId}`);
+      const response = await axios.get(`${API_BASE_URL}/quizzes/tutor/quizzes`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setQuizzes(response.data);
-      setFilteredQuizzes(response.data);
     } catch (error) {
       console.error('Error fetching quizzes:', error);
-      // Mock data for demo
-      const mockQuizzes = [
-        { id: 1, title: 'Algebra Basics', subject: 'Mathematics', duration: 30, totalMarks: 100, passingScore: 60, questions: [
-          { id: 1, text: 'What is 2 + 2?', options: ['3', '4', '5', '6'], correct: '4' },
-          { id: 2, text: 'What is 5 x 5?', options: ['20', '25', '30', '35'], correct: '25' }
-        ] },
-        { id: 2, title: 'Physics Fundamentals', subject: 'Physics', duration: 45, totalMarks: 100, passingScore: 60, questions: [
-          { id: 1, text: 'What is Newton\'s first law?', options: ['Inertia', 'F=ma', 'Action-Reaction', 'Gravity'], correct: 'Inertia' }
-        ] },
-      ];
-      setQuizzes(mockQuizzes);
-      setFilteredQuizzes(mockQuizzes);
+      setQuizzes([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch subjects
+  // Fetch subjects list
   const fetchSubjects = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/subjects`);
-      setAllSubjects(response.data);
+      setSubjects(response.data);
     } catch (error) {
       console.error('Error fetching subjects:', error);
-      setAllSubjects([
-        { id: 1, name: 'Mathematics' },
-        { id: 2, name: 'Physics' },
-        { id: 3, name: 'English' },
-        { id: 4, name: 'Chemistry' },
-        { id: 5, name: 'Biology' },
-      ]);
     }
   };
 
-  // Filter quizzes by subject - FIXED: added allSubjects to dependencies
-  useEffect(() => {
-    if (selectedSubject) {
-      const filtered = quizzes.filter(quiz => quiz.subject === selectedSubject);
-      setFilteredQuizzes(filtered);
-    } else {
-      setFilteredQuizzes(quizzes);
-    }
-  }, [selectedSubject, quizzes]); // Added 'quizzes' as dependency
+  // Handle form input changes
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  // Handle answer selection
-  const handleAnswerSelect = useCallback((questionId, answer) => {
-    setAnswers(prev => ({
+  // Handle question input changes
+  const handleQuestionChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentQuestion(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Add question to the quiz
+  const addQuestion = () => {
+    if (!currentQuestion.question.trim()) {
+      setError('Question text is required');
+      return;
+    }
+    setFormData(prev => ({
       ...prev,
-      [questionId]: answer
+      questions: [...prev.questions, { ...currentQuestion }]
     }));
-  }, []);
-
-  // Submit quiz - wrapped in useCallback
-  const handleSubmitQuiz = useCallback(async () => {
-    if (!selectedQuiz) return;
-    
-    // Calculate score
-    let correctCount = 0;
-    selectedQuiz.questions.forEach(question => {
-      if (answers[question.id] === question.correct) {
-        correctCount++;
-      }
+    // Reset question form
+    setCurrentQuestion({
+      question: '',
+      optionA: '',
+      optionB: '',
+      optionC: '',
+      optionD: '',
+      correctOption: 0,
+      marks: 1
     });
-    
-    const calculatedScore = (correctCount / selectedQuiz.questions.length) * 100;
-    setScore(calculatedScore);
-    setSubmitted(true);
-    
+    setError('');
+  };
+
+  // Remove question
+  const removeQuestion = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      questions: prev.questions.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Create or update quiz
+  const handleSubmitQuiz = async (e) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      setError('Quiz title is required');
+      return;
+    }
+    if (!formData.subjectId) {
+      setError('Please select a subject');
+      return;
+    }
+    if (formData.questions.length === 0) {
+      setError('Please add at least one question');
+      return;
+    }
+
+    setUploading(true);
     try {
-      await axios.post(`${API_BASE_URL}/quizzes/${selectedQuiz.id}/submit`, {
-        studentId: user.id,
-        answers: answers,
-        score: calculatedScore
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        subjectId: parseInt(formData.subjectId),
+        timeLimitMinutes: parseInt(formData.timeLimitMinutes),
+        difficulty: formData.difficulty,
+        questions: formData.questions.map(q => ({
+          question: q.question,
+          optionA: q.optionA,
+          optionB: q.optionB,
+          optionC: q.optionC,
+          optionD: q.optionD,
+          correctOption: parseInt(q.correctOption),
+          marks: parseInt(q.marks)
+        }))
+      };
+
+      if (editingQuiz) {
+        // Update existing quiz (you may need a PUT endpoint)
+        await axios.put(`${API_BASE_URL}/quizzes/${editingQuiz.id}`, payload, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setSuccess('Quiz updated successfully!');
+      } else {
+        // Create new quiz
+        await axios.post(`${API_BASE_URL}/quizzes/upload`, payload, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setSuccess('Quiz created successfully!');
+      }
+
+      // Reset form and refresh list
+      setFormData({
+        title: '',
+        description: '',
+        subjectId: '',
+        timeLimitMinutes: 30,
+        difficulty: 'medium',
+        questions: []
       });
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-    }
-  }, [selectedQuiz, answers, user]);
-
-  // Timer effect - FIXED: added handleSubmitQuiz to dependencies
-  useEffect(() => {
-    if (selectedQuiz && timeLeft !== null && timeLeft > 0 && !submitted) {
-      const timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !submitted) {
-      handleSubmitQuiz();
-    }
-  }, [timeLeft, selectedQuiz, submitted, handleSubmitQuiz]); // Added handleSubmitQuiz as dependency
-
-  // Start quiz
-  const startQuiz = (quiz) => {
-    setSelectedQuiz(quiz);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setTimeLeft(quiz.duration * 60);
-    setSubmitted(false);
-    setScore(null);
-  };
-
-  // Next question
-  const nextQuestion = () => {
-    if (currentQuestion < selectedQuiz.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      setEditingQuiz(null);
+      setShowCreateForm(false);
+      fetchTutorQuizzes(user.id);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save quiz');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setUploading(false);
     }
   };
 
-  // Previous question
-  const prevQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
+  // Delete quiz
+  const deleteQuiz = async (quizId) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/quizzes/${quizId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setSuccess('Quiz deleted');
+      fetchTutorQuizzes(user.id);
+      setShowDeleteConfirm(null);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to delete quiz');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  // Reset quiz
-  const resetQuiz = () => {
-    setSelectedQuiz(null);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setTimeLeft(null);
-    setSubmitted(false);
-    setScore(null);
+  // Edit quiz – populate form with existing data
+  const editQuiz = (quiz) => {
+    setEditingQuiz(quiz);
+    setFormData({
+      title: quiz.title,
+      description: quiz.description || '',
+      subjectId: quiz.subject?.id?.toString() || '',
+      timeLimitMinutes: quiz.timeLimitMinutes || 30,
+      difficulty: quiz.difficulty || 'medium',
+      questions: quiz.questions?.map(q => ({
+        question: q.question,
+        optionA: q.optionA,
+        optionB: q.optionB,
+        optionC: q.optionC,
+        optionD: q.optionD,
+        correctOption: q.correctOption,
+        marks: q.marks
+      })) || []
+    });
+    setShowCreateForm(true);
   };
 
   const handleBackToDashboard = () => {
-    navigate('/student-dashboard');
+    navigate('/tutor-dashboard');
   };
 
   if (loading) {
-    return <div className="loading-container">Loading quizzes...</div>;
+    return <div className="loading-container">Loading your quizzes...</div>;
   }
 
   return (
@@ -195,141 +252,183 @@ const TutorQuizzes  = () => {
             ← Back to Dashboard
           </button>
           <h1>My Quizzes</h1>
+          {!showCreateForm && (
+            <button onClick={() => setShowCreateForm(true)} className="create-quiz-btn">
+              + Create New Quiz
+            </button>
+          )}
         </div>
 
-        {!selectedQuiz ? (
-          <>
-            {/* Subject Filter */}
-            <div className="subject-filter">
-              <select 
-                value={selectedSubject} 
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">All Subjects</option>
-                {allSubjects.map(subject => (
-                  <option key={subject.id} value={subject.name}>{subject.name}</option>
-                ))}
-              </select>
-            </div>
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
 
-            {/* Quiz List */}
-            <div className="quizzes-list">
-              {filteredQuizzes.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">📝</div>
-                  <p>No quizzes available</p>
-                </div>
-              ) : (
-                filteredQuizzes.map(quiz => (
-                  <div key={quiz.id} className="quiz-item">
-                    <div className="quiz-info">
-                      <h3>{quiz.title}</h3>
-                      <p>{quiz.subject}</p>
-                      <div className="quiz-meta">
-                        <span>⏱️ {quiz.duration} minutes</span>
-                        <span>📊 {quiz.totalMarks} marks</span>
-                        <span>🎯 {quiz.passingScore}% to pass</span>
-                      </div>
-                    </div>
-                    <button onClick={() => startQuiz(quiz)} className="start-quiz-btn">
-                      Start Quiz
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        ) : !submitted ? (
-          // Active Quiz
-          <div className="active-quiz">
-            <div className="quiz-header">
-              <h2>{selectedQuiz.title}</h2>
-              <div className="timer">
-                ⏱️ Time Left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+        {showCreateForm ? (
+          <div className="create-quiz-form">
+            <h3>{editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}</h3>
+            <form onSubmit={handleSubmitQuiz}>
+              <div className="form-group">
+                <label>Quiz Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleFormChange}
+                  required
+                />
               </div>
-              <div className="progress">
-                Question {currentQuestion + 1} of {selectedQuiz.questions.length}
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleFormChange}
+                  rows="3"
+                />
               </div>
-            </div>
-
-            {selectedQuiz.questions.length > 0 && selectedQuiz.questions[currentQuestion] && (
-              <div className="question-container">
-                <h3>{selectedQuiz.questions[currentQuestion]?.text}</h3>
-                <div className="options">
-                  {selectedQuiz.questions[currentQuestion]?.options.map((option, index) => (
-                    <label key={index} className="option">
-                      <input
-                        type="radio"
-                        name="answer"
-                        value={option}
-                        checked={answers[selectedQuiz.questions[currentQuestion].id] === option}
-                        onChange={() => handleAnswerSelect(selectedQuiz.questions[currentQuestion].id, option)}
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="quiz-navigation">
-                  <button 
-                    onClick={prevQuestion} 
-                    disabled={currentQuestion === 0}
-                    className="nav-btn"
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Subject *</label>
+                  <select
+                    name="subjectId"
+                    value={formData.subjectId}
+                    onChange={handleFormChange}
+                    required
                   >
-                    Previous
-                  </button>
-                  {currentQuestion === selectedQuiz.questions.length - 1 ? (
-                    <button onClick={handleSubmitQuiz} className="submit-quiz-btn">
-                      Submit Quiz
-                    </button>
-                  ) : (
-                    <button onClick={nextQuestion} className="nav-btn">
-                      Next
-                    </button>
-                  )}
+                    <option value="">Select Subject</option>
+                    {subjects.map(sub => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
+                    ))}
+                  </select>
                 </div>
+                <div className="form-group">
+                  <label>Time Limit (minutes)</label>
+                  <input
+                    type="number"
+                    name="timeLimitMinutes"
+                    value={formData.timeLimitMinutes}
+                    onChange={handleFormChange}
+                    min="1"
+                    max="180"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Difficulty</label>
+                  <select name="difficulty" value={formData.difficulty} onChange={handleFormChange}>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="questions-section">
+                <h4>Questions ({formData.questions.length})</h4>
+                <div className="add-question-panel">
+                  <div className="form-group">
+                    <label>Question Text</label>
+                    <textarea
+                      name="question"
+                      value={currentQuestion.question}
+                      onChange={handleQuestionChange}
+                      rows="2"
+                    />
+                  </div>
+                  <div className="options-row">
+                    <input type="text" name="optionA" placeholder="Option A" value={currentQuestion.optionA} onChange={handleQuestionChange} />
+                    <input type="text" name="optionB" placeholder="Option B" value={currentQuestion.optionB} onChange={handleQuestionChange} />
+                    <input type="text" name="optionC" placeholder="Option C" value={currentQuestion.optionC} onChange={handleQuestionChange} />
+                    <input type="text" name="optionD" placeholder="Option D" value={currentQuestion.optionD} onChange={handleQuestionChange} />
+                  </div>
+                  <div className="options-row">
+                    <select name="correctOption" value={currentQuestion.correctOption} onChange={handleQuestionChange}>
+                      <option value="0">Correct: A</option>
+                      <option value="1">Correct: B</option>
+                      <option value="2">Correct: C</option>
+                      <option value="3">Correct: D</option>
+                    </select>
+                    <input type="number" name="marks" placeholder="Marks" value={currentQuestion.marks} onChange={handleQuestionChange} min="1" />
+                    <button type="button" onClick={addQuestion} className="add-question-btn">+ Add</button>
+                  </div>
+                </div>
+
+                {formData.questions.length > 0 && (
+                  <div className="questions-list">
+                    {formData.questions.map((q, idx) => (
+                      <div key={idx} className="question-item">
+                        <span className="question-number">Q{idx+1}</span>
+                        <div className="question-preview">
+                          <p>{q.question}</p>
+                          <small>Options: A) {q.optionA}, B) {q.optionB}, C) {q.optionC}, D) {q.optionD}</small>
+                          <small>Correct: {String.fromCharCode(65 + q.correctOption)} | Marks: {q.marks}</small>
+                        </div>
+                        <button type="button" onClick={() => removeQuestion(idx)} className="remove-question-btn">✖</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-actions">
+                <button type="button" onClick={() => { setShowCreateForm(false); setEditingQuiz(null); }} className="cancel-btn">Cancel</button>
+                <button type="submit" disabled={uploading} className="submit-quiz-btn">
+                  {uploading ? 'Saving...' : (editingQuiz ? 'Update Quiz' : 'Create Quiz')}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="quizzes-list">
+            {quizzes.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📝</div>
+                <p>You haven't created any quizzes yet.</p>
+                <button onClick={() => setShowCreateForm(true)} className="empty-create-btn">
+                  Create Your First Quiz
+                </button>
+              </div>
+            ) : (
+              <div className="quizzes-grid">
+                {quizzes.map(quiz => (
+                  <div key={quiz.id} className="quiz-card">
+                    <div className="quiz-header">
+                      <h3>{quiz.title}</h3>
+                      <span className={`status ${quiz.status?.toLowerCase() || 'published'}`}>
+                        {quiz.status || 'Published'}
+                      </span>
+                    </div>
+                    <p className="quiz-description">{quiz.description || 'No description'}</p>
+                    <div className="quiz-details">
+                      <div className="detail-item"><span>Subject:</span><strong>{quiz.subject?.name || 'General'}</strong></div>
+                      <div className="detail-item"><span>Questions:</span><strong>{quiz.totalQuestions || quiz.questions?.length || 0}</strong></div>
+                      <div className="detail-item"><span>Total Marks:</span><strong>{quiz.totalMarks}</strong></div>
+                      <div className="detail-item"><span>Time Limit:</span><strong>{quiz.timeLimitMinutes || 0} min</strong></div>
+                      <div className="detail-item"><span>Difficulty:</span><strong className={`difficulty-${quiz.difficulty}`}>{quiz.difficulty || 'medium'}</strong></div>
+                    </div>
+                    <div className="quiz-actions">
+                      <button onClick={() => editQuiz(quiz)} className="edit-btn">Edit</button>
+                      <button onClick={() => setShowDeleteConfirm(quiz.id)} className="delete-btn">Delete</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        ) : (
-          // Results
-          <div className="quiz-results">
-            <h2>Quiz Results</h2>
-            <div className="score-card">
-              <div className="score-circle">
-                <span className="score-value">{Math.round(score)}%</span>
-              </div>
-              <div className="score-details">
-                <p>You scored {Math.round(score)}%</p>
-                <p>Passing Score: {selectedQuiz.passingScore}%</p>
-                {score >= selectedQuiz.passingScore ? (
-                  <p className="pass">🎉 Congratulations! You passed!</p>
-                ) : (
-                  <p className="fail">📚 Keep practicing! You can retake this quiz.</p>
-                )}
-              </div>
-            </div>
-            <div className="score-breakdown">
-              <h3>Answer Summary</h3>
-              {selectedQuiz.questions.map((question, idx) => (
-                <div key={question.id} className="answer-summary">
-                  <p><strong>Q{idx + 1}:</strong> {question.text}</p>
-                  <p>Your answer: <span className={answers[question.id] === question.correct ? 'correct-answer' : 'wrong-answer'}>
-                    {answers[question.id] || 'Not answered'}
-                  </span></p>
-                  {answers[question.id] !== question.correct && (
-                    <p>Correct answer: <span className="correct-answer">{question.correct}</span></p>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button onClick={resetQuiz} className="back-to-quizzes-btn">
-              Back to Quizzes
-            </button>
-          </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="delete-confirm-modal">
+            <h3>Delete Quiz</h3>
+            <p>Are you sure you want to delete this quiz? This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button onClick={() => setShowDeleteConfirm(null)} className="cancel-btn">Cancel</button>
+              <button onClick={() => deleteQuiz(showDeleteConfirm)} className="confirm-delete-btn">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

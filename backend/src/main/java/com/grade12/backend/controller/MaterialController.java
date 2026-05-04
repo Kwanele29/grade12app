@@ -26,45 +26,64 @@ public class MaterialController {
     private FileStorageService fileStorageService;
 
     @Autowired
-    private MaterialRepository materialRepository;   // ✅ ADD THIS LINE
+    private MaterialRepository materialRepository;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadMaterial(
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("subjectId") Long subjectId,
             @RequestParam("topic") String topic,
             @RequestParam("tags") String tags,
-            @RequestParam("tutorId") Long tutorId) {
+            @RequestParam("tutorId") Long tutorId,
+            @RequestParam(value = "videoLink", required = false) String videoLink,
+            @RequestParam("materialType") String materialType) {   // ✅ NEW: explicit type from dropdown
 
         try {
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Please select a file"));
-            }
-            if (file.getSize() > 100 * 1024 * 1024) {
-                return ResponseEntity.badRequest().body(Map.of("error", "File size must be less than 100MB"));
-            }
+            boolean hasFile = file != null && !file.isEmpty();
+            boolean hasLink = videoLink != null && !videoLink.isBlank();
 
-            String fileUrl = fileStorageService.storeFile(file, tutorId);
-            long fileSize = file.getSize();
-            String materialType = getMaterialType(file.getOriginalFilename());
+            // Validation for Video type
+            if ("video".equals(materialType)) {
+                if (!hasLink) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Video lessons require a video link"));
+                }
+            } else { // paper or note
+                if (!hasFile) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Past Papers and Study Notes require a file"));
+                }
+                if (file.getSize() > 100L * 1024 * 1024) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "File size must be less than 100MB"));
+                }
+            }
 
             Material material = new Material();
             material.setTitle(title);
             material.setDescription(description);
-            material.setMaterialType(materialType);
-            material.setFileUrl(fileUrl);
-            material.setFileSize(fileSize);
             material.setTopic(topic);
-            material.setTags(tags.split(","));
+            material.setTags(tags != null ? tags.split(",") : new String[0]);
+            material.setMaterialType(materialType);   // ✅ store exactly what tutor selected
+
+            if ("video".equals(materialType)) {
+                material.setVideoLink(videoLink.trim());
+                material.setFileSize(0L);
+                material.setFileUrl(null);
+            } else {
+                String fileUrl = fileStorageService.storeFile(file, tutorId);
+                material.setFileUrl(fileUrl);
+                material.setFileSize(file.getSize());
+                material.setVideoLink(null);
+            }
 
             Material savedMaterial = materialService.createMaterial(material, tutorId, subjectId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Material uploaded successfully");
             response.put("material", savedMaterial);
-
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -74,6 +93,7 @@ public class MaterialController {
         }
     }
 
+    // ✅ ADDED: Get materials by tutor ID (missing endpoint)
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<?> getMaterialsByTutor(@PathVariable Long tutorId) {
         try {
@@ -81,47 +101,14 @@ public class MaterialController {
             return ResponseEntity.ok(materials);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch materials: " + e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/{materialId}")
-    public ResponseEntity<?> deleteMaterial(@PathVariable Long materialId) {
-        try {
-            materialService.delete(materialId);
-            return ResponseEntity.ok(Map.of("message", "Material deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to delete material: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/{materialId}/view")
-    public ResponseEntity<?> incrementViewCount(@PathVariable Long materialId) {
-        try {
-            materialService.incrementViews(materialId);
-            return ResponseEntity.ok(Map.of("message", "View count incremented"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to increment view count: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/{materialId}/download")
-    public ResponseEntity<?> incrementDownloadCount(@PathVariable Long materialId) {
-        try {
-            materialService.incrementDownloads(materialId);
-            return ResponseEntity.ok(Map.of("message", "Download count incremented"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to increment download count: " + e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping("/subject/{subjectId}")
     public ResponseEntity<?> getMaterialsBySubject(@PathVariable Long subjectId) {
         try {
-            List<Material> materials = materialRepository.findBySubjectId(subjectId);  // ✅ now works
+            List<Material> materials = materialRepository.findBySubjectId(subjectId);
             return ResponseEntity.ok(materials);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -129,10 +116,11 @@ public class MaterialController {
         }
     }
 
+    // getMaterialType helper no longer used for setting type, but keep for other uses
     private String getMaterialType(String filename) {
         if (filename == null) return "other";
-        String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-        switch (extension) {
+        String ext = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+        switch (ext) {
             case "pdf": return "pdf";
             case "doc": case "docx": return "document";
             case "ppt": case "pptx": return "presentation";

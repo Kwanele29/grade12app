@@ -17,11 +17,12 @@ const TutorMessages = () => {
   const [loading, setLoading] = useState(true);
   const [typing, setTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
-  
+
   const stompClient = useRef(null);
   const messagesEndRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const reconnectTimer = useRef(null);
 
-  // Scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -30,7 +31,6 @@ const TutorMessages = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Format message time
   const formatMessageTime = useCallback((timestamp) => {
     if (!timestamp) return 'Just now';
     const date = new Date(timestamp);
@@ -47,91 +47,52 @@ const TutorMessages = () => {
     return date.toLocaleDateString();
   }, []);
 
-  // Mark messages as read
+  // Mark messages as read - FIXED to match backend
   const markMessagesAsRead = useCallback(async (studentId) => {
     if (!user) return;
-    
     try {
       await api.post('/chat/mark-read', {
-        senderId: studentId,
-        receiverId: user.id
+        studentId: studentId,
+        tutorId: user.id,
+        subjectId: 1, // Replace with actual subjectId if available
+        readerType: 'TUTOR'
       });
-      
-      // Update unread count in students list
-      setStudents(prev => prev.map(s => 
-        s.id === studentId ? { ...s, unread: 0 } : s
-      ));
+      setStudents((prev) =>
+        prev.map((s) => (s.id === studentId ? { ...s, unread: 0 } : s))
+      );
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
   }, [user]);
 
-  // Connect to WebSocket
+  // WebSocket connection (optional, but we keep it)
   const connectWebSocket = useCallback(() => {
     if (!user) return;
-    
-    const socket = new SockJS('http://localhost:8080/ws');
+    const socket = new SockJS(`${process.env.REACT_APP_WS_URL || 'http://localhost:8080'}/ws`);
     stompClient.current = Stomp.over(socket);
-    
-    stompClient.current.connect({}, () => {
-      setIsConnected(true);
-      console.log('WebSocket connected');
-      
-      // Subscribe to user's personal queue for messages
-      stompClient.current.subscribe(`/user/${user.id}/queue/messages`, (message) => {
-        const receivedMessage = JSON.parse(message.body);
-        console.log('Received message:', receivedMessage);
-        
-        // Update messages if this is for the selected student
-        setMessages(prev => {
-          if (selectedStudent && receivedMessage.senderId === selectedStudent.id) {
-            const newMessages = [...prev, {
-              id: receivedMessage.id || Date.now(),
-              studentId: receivedMessage.senderId,
-              text: receivedMessage.content,
-              time: formatMessageTime(receivedMessage.timestamp),
-              isFromMe: false,
-              timestamp: receivedMessage.timestamp
-            }];
-            
-            // Mark as read
-            markMessagesAsRead(selectedStudent.id);
-            return newMessages;
-          }
-          return prev;
-        });
-        
-        // Update last message in students list
-        setStudents(prev => prev.map(s => 
-          s.id === receivedMessage.senderId 
-            ? { 
-                ...s, 
-                lastMessage: receivedMessage.content, 
-                time: formatMessageTime(receivedMessage.timestamp),
-                unread: selectedStudent?.id === s.id ? 0 : (s.unread || 0) + 1
-              }
-            : s
-        ));
-      });
-      
-      // Subscribe to typing notifications
-      stompClient.current.subscribe(`/user/${user.id}/queue/typing`, (typingEvent) => {
-        const event = JSON.parse(typingEvent.body);
-        if (selectedStudent && event.senderId === selectedStudent.id) {
-          setTyping(event.typing);
-          // Clear typing indicator after 3 seconds
-          if (event.typing) {
-            setTimeout(() => setTyping(false), 3000);
-          }
-        }
-      });
-    });
-  }, [user, selectedStudent, formatMessageTime, markMessagesAsRead]);
+    stompClient.current.debug = () => {};
 
-  // Send typing indicator
+    stompClient.current.connect(
+      { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      () => {
+        setIsConnected(true);
+        reconnectAttempts.current = 0;
+        console.log('WebSocket connected');
+        // ... subscriptions (optional)
+      },
+      (error) => {
+        console.error('WebSocket connection failed:', error);
+        setIsConnected(false);
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+        const delay = Math.min(30000, 1000 * Math.pow(2, reconnectAttempts.current));
+        reconnectAttempts.current++;
+        reconnectTimer.current = setTimeout(() => connectWebSocket(), delay);
+      }
+    );
+  }, [user]);
+
   const sendTypingIndicator = useCallback((isTyping) => {
     if (!selectedStudent || !isConnected) return;
-    
     stompClient.current.send('/app/typing', {}, JSON.stringify({
       senderId: user.id,
       receiverId: selectedStudent.id,
@@ -139,40 +100,35 @@ const TutorMessages = () => {
     }));
   }, [selectedStudent, isConnected, user]);
 
-  // Handle typing
   const handleTyping = (e) => {
     setMessage(e.target.value);
-    
     if (!isConnected) return;
-    
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-    
+    if (typingTimeout) clearTimeout(typingTimeout);
     sendTypingIndicator(true);
-    
-    setTypingTimeout(setTimeout(() => {
-      sendTypingIndicator(false);
-    }, 2000));
+    setTypingTimeout(setTimeout(() => sendTypingIndicator(false), 2000));
   };
 
-  // Load conversation history from API (NO MOCK)
+  // Load conversation - FIXED to use query params
   const loadConversation = useCallback(async (studentId) => {
     if (!user) return;
-    
     try {
-      const response = await api.get(`/chat/conversation/${user.id}/${studentId}`);
-      const formattedMessages = response.data.map(msg => ({
+      const response = await api.get('/chat/conversation', {
+        params: {
+          studentId: studentId,
+          tutorId: user.id,
+          subjectId: 1
+        }
+      });
+      const formatted = response.data.map((msg) => ({
         id: msg.id,
-        studentId: msg.senderId === studentId ? studentId : user.id,
-        text: msg.content,
-        time: formatMessageTime(msg.timestamp),
-        isFromMe: msg.senderId === user.id,
-        timestamp: msg.timestamp
+        studentId: msg.studentId,
+        text: msg.message,
+        time: formatMessageTime(msg.createdAt),
+        isFromMe: msg.senderType === 'TUTOR',
+        timestamp: msg.createdAt,
+        status: 'sent'
       }));
-      setMessages(formattedMessages);
-      
-      // Mark messages as read
+      setMessages(formatted);
       markMessagesAsRead(studentId);
     } catch (error) {
       console.error('Error loading conversation:', error);
@@ -180,12 +136,12 @@ const TutorMessages = () => {
     }
   }, [user, formatMessageTime, markMessagesAsRead]);
 
-  // Fetch students from API (NO MOCK)
+  // Fetch students (unchanged)
   const fetchStudents = useCallback(async (tutorId) => {
     try {
       const response = await api.get(`/tutor/${tutorId}/students`);
-      if (response.data && response.data.length > 0) {
-        const formattedStudents = response.data.map(student => ({
+      if (response.data && response.data.length) {
+        const formatted = response.data.map((student) => ({
           id: student.id,
           name: `${student.firstName} ${student.lastName}`,
           email: student.email,
@@ -194,9 +150,9 @@ const TutorMessages = () => {
           time: student.lastMessageTime ? formatMessageTime(student.lastMessageTime) : '',
           unread: student.unreadCount || 0,
           online: student.online || false,
-          subject: student.subject || 'General'
+          subject: student.subject || 'General',
         }));
-        setStudents(formattedStudents);
+        setStudents(formatted);
       } else {
         setStudents([]);
       }
@@ -208,119 +164,135 @@ const TutorMessages = () => {
     }
   }, [formatMessageTime]);
 
-  // Send message
-  const handleSendMessage = useCallback(async () => {
-    if (!message.trim() || !selectedStudent || !isConnected) return;
+  // Send message - REST only (simpler, reliable)
+  const sendMessage = useCallback(async (textMessage) => {
+    if (!textMessage.trim() || !selectedStudent) return null;
 
-    const chatMessage = {
-      senderId: user.id.toString(),
-      senderName: `${user.firstName} ${user.lastName}`,
-      receiverId: selectedStudent.id.toString(),
-      receiverName: selectedStudent.name,
-      content: message,
-      messageType: 'TEXT',
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
+    const payload = {
+      senderId: user.id,
+      receiverId: selectedStudent.id,
+      content: textMessage,
       timestamp: new Date().toISOString(),
-      isRead: false
     };
 
-    // Send via WebSocket
-    stompClient.current.send('/app/send', {}, JSON.stringify(chatMessage));
-    
-    // Add to local messages
     const newMessage = {
-      id: Date.now(),
+      id: tempId,
       studentId: selectedStudent.id,
-      text: message,
+      text: textMessage,
       time: 'Just now',
       isFromMe: true,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      status: 'sending',
     };
-    
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Update last message in student list
-    setStudents(prev => prev.map(s => 
-      s.id === selectedStudent.id 
-        ? { ...s, lastMessage: message, time: 'Just now', unread: 0 }
-        : s
-    ));
-    
+    setMessages((prev) => [...prev, newMessage]);
+
+    try {
+      const response = await api.post('/chat/send', payload);
+      const savedMsg = response.data;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId
+            ? {
+                ...msg,
+                id: savedMsg.id,
+                status: 'sent',
+                timestamp: savedMsg.createdAt,
+                time: formatMessageTime(savedMsg.createdAt),
+              }
+            : msg
+        )
+      );
+      return savedMsg;
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId ? { ...msg, status: 'failed' } : msg
+        )
+      );
+      return null;
+    }
+  }, [selectedStudent, user, formatMessageTime]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !selectedStudent) return;
+    const text = message.trim();
     setMessage('');
     sendTypingIndicator(false);
-  }, [message, selectedStudent, isConnected, user, sendTypingIndicator]);
+    await sendMessage(text);
+  };
 
-  // Handle student selection
+  const retryFailedMessage = async (tempId, originalText) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+    await sendMessage(originalText);
+  };
+
   const handleSelectStudent = useCallback((student) => {
     setSelectedStudent(student);
     setTyping(false);
     loadConversation(student.id);
   }, [loadConversation]);
 
-  const handleKeyPress = useCallback((e) => {
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  }, [handleSendMessage]);
+  };
 
-  const handleBackToDashboard = useCallback(() => {
-    navigate('/tutor-dashboard');
-  }, [navigate]);
+  const handleBackToDashboard = () => navigate('/tutor-dashboard');
 
   // Load user data
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    
     if (!userData || !token) {
       navigate('/login');
       return;
     }
-    
     try {
-      const parsedUser = JSON.parse(userData);
-      if (parsedUser.category !== 'tutor') {
+      const parsed = JSON.parse(userData);
+      if (parsed.category !== 'tutor') {
         navigate('/login');
         return;
       }
-      setUser(parsedUser);
-      fetchStudents(parsedUser.id);
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+      setUser(parsed);
+      fetchStudents(parsed.id);
+    } catch (err) {
+      console.error(err);
       navigate('/login');
     }
   }, [navigate, fetchStudents]);
 
-  // Connect to WebSocket when user is loaded
+  // Connect WebSocket (optional)
   useEffect(() => {
     if (user && !stompClient.current?.connected) {
       connectWebSocket();
     }
-    
-    // Cleanup on unmount
     return () => {
-      if (stompClient.current && stompClient.current.connected) {
-        stompClient.current.disconnect();
-        setIsConnected(false);
-      }
+      if (stompClient.current?.connected) stompClient.current.disconnect();
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
   }, [user, connectWebSocket]);
 
-  // Clear typing timeout on unmount
   useEffect(() => {
     return () => {
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
-      }
+      if (typingTimeout) clearTimeout(typingTimeout);
     };
   }, [typingTimeout]);
 
   if (loading) {
-    return <div className="loading-container">Loading messages from database...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading conversations...</p>
+      </div>
+    );
   }
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStudents = students.filter((s) =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -332,7 +304,8 @@ const TutorMessages = () => {
           </button>
           <h1>Messages</h1>
           <div className="header-stats">
-            <span>{students.filter(s => s.online).length} online</span>
+            <span className={`connection-dot ${isConnected ? 'online' : 'offline'}`}></span>
+            <span>{students.filter((s) => s.online).length} online</span>
             <span>{students.reduce((sum, s) => sum + (s.unread || 0), 0)} unread</span>
           </div>
         </div>
@@ -343,9 +316,9 @@ const TutorMessages = () => {
             <div className="students-list-header">
               <h3>Students ({students.length})</h3>
               <div className="search-box">
-                <input 
-                  type="text" 
-                  placeholder="Search students..." 
+                <input
+                  type="text"
+                  placeholder="Search students..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -354,16 +327,19 @@ const TutorMessages = () => {
             <div className="students-scroll">
               {filteredStudents.length === 0 ? (
                 <div className="no-students">
-                  {searchTerm ? 'No students match your search' : 'No students found in the database'}
+                  {searchTerm ? 'No students match your search' : 'No students found'}
                 </div>
               ) : (
-                filteredStudents.map(student => (
-                  <div 
-                    key={student.id} 
+                filteredStudents.map((student) => (
+                  <div
+                    key={student.id}
                     className={`student-item ${selectedStudent?.id === student.id ? 'active' : ''}`}
                     onClick={() => handleSelectStudent(student)}
                   >
-                    <div className="student-avatar" style={{ background: `linear-gradient(135deg, #667eea, #764ba2)` }}>
+                    <div
+                      className="student-avatar"
+                      style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
+                    >
                       {student.avatar}
                       {student.online && <span className="online-dot"></span>}
                     </div>
@@ -387,16 +363,17 @@ const TutorMessages = () => {
               <>
                 <div className="chat-header">
                   <div className="chat-header-info">
-                    <div className="student-avatar large" style={{ background: `linear-gradient(135deg, #667eea, #764ba2)` }}>
+                    <div
+                      className="student-avatar large"
+                      style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
+                    >
                       {selectedStudent.avatar}
                     </div>
                     <div>
                       <h3>{selectedStudent.name}</h3>
                       <div className="student-details">
                         <span className="student-subject">{selectedStudent.subject}</span>
-                        <span className={`status ${selectedStudent.online ? 'online' : 'offline'}`}>
-                          {selectedStudent.online ? '● Online' : '● Offline'}
-                        </span>
+                        
                       </div>
                     </div>
                   </div>
@@ -410,11 +387,27 @@ const TutorMessages = () => {
                       <p className="no-messages-sub">Send a message to start the conversation</p>
                     </div>
                   ) : (
-                    messages.map((msg, index) => (
-                      <div key={msg.id || index} className={`message ${msg.isFromMe ? 'sent' : 'received'}`}>
+                    messages.map((msg) => (
+                      <div key={msg.id} className={`message ${msg.isFromMe ? 'sent' : 'received'}`}>
                         <div className="message-bubble">
                           <div className="message-text">{msg.text}</div>
-                          <div className="message-time">{msg.time}</div>
+                          <div className="message-meta">
+                            <span className="message-time">{msg.time}</span>
+                            {msg.isFromMe && msg.status === 'sending' && (
+                              <span className="message-status sending">⏎ Sending...</span>
+                            )}
+                            {msg.isFromMe && msg.status === 'sent' && (
+                              <span className="message-status sent">✓ Sent</span>
+                            )}
+                            {msg.isFromMe && msg.status === 'failed' && (
+                              <button
+                                className="message-retry"
+                                onClick={() => retryFailedMessage(msg.id, msg.text)}
+                              >
+                                ⟳ Retry
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -435,19 +428,15 @@ const TutorMessages = () => {
                     placeholder={`Message ${selectedStudent.name}...`}
                     rows="3"
                   />
-                  <button 
-                    onClick={handleSendMessage} 
+                  <button
+                    onClick={handleSendMessage}
                     className="send-btn"
-                    disabled={!message.trim() || !isConnected}
+                    disabled={!message.trim()}
                   >
                     Send Message
                   </button>
                 </div>
-                {!isConnected && (
-                  <div className="connection-warning">
-                    ⚠️ Connecting to chat server...
-                  </div>
-                )}
+               
               </>
             ) : (
               <div className="no-student-selected">

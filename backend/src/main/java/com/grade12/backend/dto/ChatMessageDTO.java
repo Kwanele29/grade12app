@@ -1,9 +1,13 @@
 package com.grade12.backend.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatMessageDTO {
     private Long id;
     private Long studentId;

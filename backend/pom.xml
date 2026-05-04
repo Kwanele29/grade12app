@@ -47,13 +47,24 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
-
         
+        <!-- WebSocket support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        
+        <!-- ✅ CRITICAL FIX: Jackson Java 8 Date/Time support -->
+        <!-- Without this, LocalDateTime deserialization ALWAYS fails -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
         <!-- Database -->
         <dependency>
             <groupId>com.mysql</groupId>
@@ -80,7 +91,7 @@
             <scope>runtime</scope>
         </dependency>
         
-        <!-- Dotenv for loading .env file -->
+        <!-- Dotenv -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
@@ -121,7 +132,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.1.5</version>  <!-- Added version -->
+                <version>3.1.5</version>
                 <configuration>
                     <excludes>
                         <exclude>
