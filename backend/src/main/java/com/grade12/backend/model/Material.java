@@ -21,8 +21,8 @@ public class Material {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_id", nullable = false)
-    @JsonIgnoreProperties({"materials", "password", "resetToken", "resetTokenExpiryDate"})
-    private Tutor tutor;
+    @JsonIgnoreProperties({"materials", "user", "password", "resetToken", "resetTokenExpiryDate"})
+    private Tutor tutor;   // ✅ Changed from User to Tutor
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
@@ -39,7 +39,6 @@ public class Material {
 
     private String topic;
 
-    // ✅ NEW: stores an external video link (YouTube, Vimeo, etc.)
     @Column(name = "video_link", length = 500)
     private String videoLink;
 
@@ -53,8 +52,7 @@ public class Material {
 
     public Material() {}
 
-    // ─── Getters & Setters ───────────────────────────────────────────────────
-
+    // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -65,7 +63,7 @@ public class Material {
     public void setDescription(String description) { this.description = description; }
 
     public Tutor getTutor() { return tutor; }
-    public void setTutor(Tutor tutor) { this.tutor = tutor; }
+    public void setTutor(Tutor tutor) { this.tutor = tutor; }  // ✅ Now accepts Tutor
 
     public Subject getSubject() { return subject; }
     public void setSubject(Subject subject) { this.subject = subject; }
@@ -91,7 +89,6 @@ public class Material {
     public String getTopic() { return topic; }
     public void setTopic(String topic) { this.topic = topic; }
 
-    // ✅ NEW getter/setter for videoLink
     public String getVideoLink() { return videoLink; }
     public void setVideoLink(String videoLink) { this.videoLink = videoLink; }
 
@@ -126,18 +123,15 @@ public class Material {
     }
 }
 
-// ─── String[] <-> CSV converter ─────────────────────────────────────────────
+// Converter for String[]
 @Converter
 class StringArrayConverter implements AttributeConverter<String[], String> {
-
     private static final String SEPARATOR = ",";
-
     @Override
     public String convertToDatabaseColumn(String[] attribute) {
         if (attribute == null || attribute.length == 0) return "";
         return String.join(SEPARATOR, attribute);
     }
-
     @Override
     public String[] convertToEntityAttribute(String dbData) {
         if (dbData == null || dbData.isEmpty()) return new String[0];
