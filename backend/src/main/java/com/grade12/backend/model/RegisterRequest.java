@@ -1,4 +1,4 @@
-package com.grade12.backend.model;
+package com.grade12.backend.dto;
 
 import lombok.Data;
 

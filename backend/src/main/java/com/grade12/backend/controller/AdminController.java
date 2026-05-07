@@ -43,6 +43,7 @@ public class AdminController {
                 .collect(Collectors.toList());
         // Remove passwords from response for security
         activeUsers.forEach(user -> user.setPassword(null));
+        System.out.println("📋 Retrieved " + activeUsers.size() + " active users");
         return ResponseEntity.ok(activeUsers);
     }
 
@@ -86,6 +87,8 @@ public class AdminController {
             User savedUser = userRepository.save(user);
             savedUser.setPassword(null);
             
+            System.out.println("✅ Created new user: " + email + " (ID: " + savedUser.getId() + ")");
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,6 +117,8 @@ public class AdminController {
             User updatedUser = userRepository.save(user);
             updatedUser.setPassword(null);
             
+            System.out.println("✏️ Updated user: " + user.getEmail() + " (ID: " + id + ")");
+            
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             e.printStackTrace();
@@ -122,40 +127,62 @@ public class AdminController {
         }
     }
 
-    // DELETE user (HARD DELETE - permanently remove from database)
+    // DELETE user - HARD DELETE (permanently remove from database)
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
-            Optional<User> user = userRepository.findById(id);
-            if (!user.isPresent()) {
+            System.out.println("🗑️ HARD DELETE requested for user ID: " + id);
+            
+            Optional<User> userOptional = userRepository.findById(id);
+            if (!userOptional.isPresent()) {
+                System.out.println("❌ User not found with ID: " + id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "User not found"));
             }
             
-            User userToDelete = user.get();
+            User userToDelete = userOptional.get();
             String userCategory = userToDelete.getCategory();
+            String userEmail = userToDelete.getEmail();
+            
+            System.out.println("📧 Deleting user: " + userEmail + " (Category: " + userCategory + ")");
             
             // Delete related records based on user type
+            int relatedDeleted = 0;
             try {
                 if ("student".equals(userCategory)) {
                     studentSubjectRepository.deleteByStudentId(id);
-                    System.out.println("Deleted student-subject relationships for student ID: " + id);
+                    System.out.println("   ✅ Deleted student-subject relationships for student ID: " + id);
+                    relatedDeleted++;
                 }
                 
                 if ("tutor".equals(userCategory)) {
                     quizRepository.deleteByTutorId(id);
-                    System.out.println("Deleted quizzes for tutor ID: " + id);
+                    System.out.println("   ✅ Deleted quizzes for tutor ID: " + id);
+                    relatedDeleted++;
                 }
             } catch (Exception relatedError) {
-                System.out.println("Warning while deleting related records: " + relatedError.getMessage());
-                // Continue with user deletion
+                System.out.println("   ⚠️ Warning while deleting related records: " + relatedError.getMessage());
             }
             
-            // Finally, delete the user
+            // HARD DELETE - Permanently remove user from database
             userRepository.deleteById(id);
+            System.out.println("✅ HARD DELETE successful! User permanently removed from database: " + userEmail);
             
-            return ResponseEntity.ok(Map.of("message", "User permanently deleted from database"));
+            // Verify deletion
+            boolean stillExists = userRepository.findById(id).isPresent();
+            if (!stillExists) {
+                System.out.println("✅ Verification: User ID " + id + " no longer exists in database");
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "User permanently deleted from database",
+                "deletedUser", userEmail,
+                "userId", id,
+                "relatedDeleted", relatedDeleted
+            ));
+            
         } catch (Exception e) {
+            System.err.println("❌ Error during hard delete: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to delete user: " + e.getMessage()));

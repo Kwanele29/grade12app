@@ -1,11 +1,12 @@
 package com.grade12.backend.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 
 @Entity
 @Table(name = "materials")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Material {
     
     @Id
@@ -15,48 +16,37 @@ public class Material {
     @Column(nullable = false)
     private String title;
     
+    @Column(length = 1000)
     private String description;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_id", nullable = false)
-    private User tutor;  // Using User instead of Tutor
+    @JsonIgnoreProperties({"password", "resetToken", "resetTokenExpiry", "quizzes"})
+    private User tutor;  // Changed from Tutor to User
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
+    @JsonIgnoreProperties({"materials"})
     private Subject subject;
     
-    @Column(name = "material_type")
-    private String materialType; // pdf, document, presentation, video, image, etc.
-    
-    @Column(name = "file_url")
+    private String materialType;
     private String fileUrl;
-    
-    @Column(name = "file_size")
+    private String thumbnailUrl;
     private Long fileSize;
     
-    private String topic;
-    
-    @Column(columnDefinition = "TEXT")
-    private String tags; // Store as JSON or comma-separated
-    
-    private String status; // draft, published, archived
-    
-    @Column(name = "uploaded_at")
-    private LocalDateTime uploadedAt;
-    
     private Integer downloads = 0;
-    
     private Integer views = 0;
     
-    @PrePersist
-    protected void onCreate() {
-        uploadedAt = LocalDateTime.now();
-        if (downloads == null) downloads = 0;
-        if (views == null) views = 0;
-        if (status == null) status = "published";
-    }
+    private String topic;
+    private String tags;  // Stored as comma-separated string
+    private String status;
     
-    // Helper method to get tags as array
+    private LocalDateTime uploadedAt;
+    private LocalDateTime updatedAt;
+    
+    public Material() {}
+    
+    // Helper for tags
     public String[] getTags() {
         if (tags == null || tags.isEmpty()) return new String[0];
         return tags.split(",");
@@ -68,6 +58,10 @@ public class Material {
         } else {
             this.tags = String.join(",", tags);
         }
+    }
+    
+    public String getSubjectName() {
+        return subject != null ? subject.getName() : null;
     }
     
     // Getters and Setters
@@ -92,8 +86,17 @@ public class Material {
     public String getFileUrl() { return fileUrl; }
     public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
     
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    
+    public Integer getDownloads() { return downloads; }
+    public void setDownloads(Integer downloads) { this.downloads = downloads; }
+    
+    public Integer getViews() { return views; }
+    public void setViews(Integer views) { this.views = views; }
     
     public String getTopic() { return topic; }
     public void setTopic(String topic) { this.topic = topic; }
@@ -107,9 +110,20 @@ public class Material {
     public LocalDateTime getUploadedAt() { return uploadedAt; }
     public void setUploadedAt(LocalDateTime uploadedAt) { this.uploadedAt = uploadedAt; }
     
-    public Integer getDownloads() { return downloads; }
-    public void setDownloads(Integer downloads) { this.downloads = downloads; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     
-    public Integer getViews() { return views; }
-    public void setViews(Integer views) { this.views = views; }
+    @PrePersist
+    protected void onCreate() {
+        uploadedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (downloads == null) downloads = 0;
+        if (views == null) views = 0;
+        if (status == null) status = "published";
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

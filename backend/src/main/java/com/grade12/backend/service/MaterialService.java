@@ -29,7 +29,12 @@ public class MaterialService {
     private FileStorageService fileStorageService;
     
     public List<Material> findByTutorId(Long tutorId) {
+        // Now this method exists in the repository
         return materialRepository.findByTutorIdOrderByUploadedAtDesc(tutorId);
+    }
+    
+    public List<Material> findBySubjectId(Long subjectId) {
+        return materialRepository.findBySubjectId(subjectId);
     }
     
     public Material findById(Long id) {
@@ -56,13 +61,11 @@ public class MaterialService {
     @Transactional
     public void delete(Long id) throws Exception {
         Material material = findById(id);
-        if (material != null) {
-            if (material.getFileUrl() != null && !material.getFileUrl().isEmpty()) {
-                try {
-                    fileStorageService.deleteFile(material.getFileUrl());
-                } catch (IOException e) {
-                    System.err.println("Error deleting file: " + e.getMessage());
-                }
+        if (material != null && material.getFileUrl() != null) {
+            try {
+                fileStorageService.deleteFile(material.getFileUrl());
+            } catch (IOException e) {
+                System.err.println("Error deleting file: " + e.getMessage());
             }
             materialRepository.deleteById(id);
         }

@@ -13,25 +13,33 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendMessage, setResendMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
+  // LOAD SAVED EMAIL WHEN COMPONENT MOUNTS
   useEffect(() => {
-    // Check if we have OAuth2 response in URL
+    // Check for saved email in localStorage
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setRememberMe(true);
+    }
+    
+    // Check URL parameters for verification messages
     const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get('verified');
+    const registered = urlParams.get('registered');
     const token = urlParams.get('token');
     const refreshToken = urlParams.get('refreshToken');
     const userParam = urlParams.get('user');
     
-    console.log('OAuth2 Response - Token:', token);
-    console.log('OAuth2 Response - User Param:', userParam);
-    
+    // Handle OAuth2 login
     if (token && userParam) {
       try {
-        // Decode the URL encoded JSON
         const decodedUserJson = decodeURIComponent(userParam);
-        console.log('Decoded User JSON:', decodedUserJson);
-        
         const user = JSON.parse(decodedUserJson);
-        console.log('Parsed User:', user);
         
         localStorage.setItem('token', token);
         if (refreshToken) {
@@ -39,14 +47,28 @@ const Login = () => {
         }
         localStorage.setItem('user', JSON.stringify(user));
         
-        // Redirect based on user role
         redirectBasedOnRole(user.category);
-        
       } catch (error) {
         console.error('Error parsing user data:', error);
-        console.error('Raw userParam:', userParam);
         alert('Login failed: Could not process user data');
       }
+    }
+    
+    // Handle verification messages
+    if (verified === 'true') {
+      setSuccessMessage('Email verified successfully! You can now log in.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      window.history.replaceState({}, '', '/login');
+    } else if (verified === 'false') {
+      const error = urlParams.get('error');
+      setErrors({ submit: error || 'Email verification failed. Please try again.' });
+      window.history.replaceState({}, '', '/login');
+    }
+    
+    if (registered === 'true') {
+      setSuccessMessage('Registration successful! Please check your email to verify your account.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+      window.history.replaceState({}, '', '/login');
     }
   }, []);
 
@@ -126,19 +148,29 @@ const Login = () => {
         const data = await response.json();
 
         if (response.ok) {
+          // Save to localStorage
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('refreshToken', data.refreshToken);
           
+          // Handle Remember Me
           if (rememberMe) {
             localStorage.setItem('rememberedEmail', formData.email);
+          } else {
+            localStorage.removeItem('rememberedEmail');
           }
           
           console.log('User role:', data.user.category);
           
           redirectBasedOnRole(data.user.category);
         } else {
-          setErrors({ submit: data.message || 'Invalid email or password' });
+          if (data.requiresVerification) {
+            setVerificationEmail(data.email || formData.email);
+            setShowVerificationModal(true);
+            setErrors({});
+          } else {
+            setErrors({ submit: data.message || 'Invalid email or password' });
+          }
         }
       } catch (error) {
         console.error('Login error:', error);
@@ -148,6 +180,30 @@ const Login = () => {
       }
     } else {
       setErrors(newErrors);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendMessage('');
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: verificationEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setResendMessage('Verification email sent! Please check your inbox.');
+        setTimeout(() => setResendMessage(''), 5000);
+      } else {
+        setResendMessage(data.error || 'Failed to send verification email');
+      }
+    } catch (error) {
+      setResendMessage('Network error. Please try again.');
     }
   };
 
@@ -171,6 +227,12 @@ const Login = () => {
             <h1>Welcome Back!</h1>
             <p>Log in to continue your exam preparation journey</p>
           </div>
+
+          {successMessage && (
+            <div className="success-message">
+              {successMessage}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
@@ -263,6 +325,26 @@ const Login = () => {
           </form>
         </div>
       </div>
+
+      {/* Verification Modal */}
+      {showVerificationModal && (
+        <div className="verification-modal-overlay">
+          <div className="verification-modal">
+            <h3>Email Verification Required</h3>
+            <p>Please verify your email address before logging in.</p>
+            <p>A verification link has been sent to:</p>
+            <p className="verification-email">{verificationEmail}</p>
+            <p>Didn't receive the email?</p>
+            <button onClick={handleResendVerification} className="resend-btn">
+              Resend Verification Email
+            </button>
+            {resendMessage && <p className="resend-message">{resendMessage}</p>}
+            <button onClick={() => setShowVerificationModal(false)} className="close-modal-btn">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

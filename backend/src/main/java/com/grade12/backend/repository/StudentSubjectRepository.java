@@ -20,9 +20,9 @@ public interface StudentSubjectRepository extends JpaRepository<StudentSubject, 
     Long countBySubject(Subject subject);
     List<StudentSubject> findBySubjectId(Long subjectId);
     
-    // Delete all student-subject records for a specific student
+    // Delete all student-subject records for a specific student - returns count
     @Modifying
     @Transactional
     @Query("DELETE FROM StudentSubject ss WHERE ss.student.id = :studentId")
-    void deleteByStudentId(@Param("studentId") Long studentId);
+    int deleteByStudentId(@Param("studentId") Long studentId);
 }

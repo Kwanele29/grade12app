@@ -346,4 +346,85 @@
   scrollbar-width: thin;
   scrollbar-color: #1F2833 #0B0C10;
 }
+/* Verification Modal */
+.verification-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.verification-modal {
+  background: #1F2833;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  border: 1px solid rgba(102, 252, 241, 0.3);
+}
+
+.verification-modal h3 {
+  color: #66FCF1;
+  margin-bottom: 15px;
+}
+
+.verification-modal p {
+  color: #C5C6C7;
+  margin-bottom: 10px;
+}
+
+.verification-email {
+  font-weight: bold;
+  color: #45A29E;
+  margin: 10px 0;
+}
+
+.resend-btn {
+  background: linear-gradient(135deg, #66FCF1, #45A29E);
+  color: #0B0C10;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.resend-btn:hover {
+  transform: translateY(-2px);
+}
+
+.close-modal-btn {
+  background: #45A29E;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 15px;
+  margin-left: 10px;
+}
+
+.resend-message {
+  color: #66FCF1;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.success-message {
+  background: rgba(102, 252, 241, 0.1);
+  border: 1px solid #66FCF1;
+  color: #66FCF1;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
 }

@@ -24,49 +24,84 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
+      console.log('Fetching users with token:', token ? 'Token exists' : 'No token');
+      
       const response = await fetch('http://localhost:8080/api/admin/users', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
+      
+      console.log('Fetch response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        const usersData = Array.isArray(data) ? data : (data.users || data.data || []);
+        console.log('Users data received:', data);
+        
+        // Handle different response formats
+        let usersData = [];
+        if (Array.isArray(data)) {
+          usersData = data;
+        } else if (data.users && Array.isArray(data.users)) {
+          usersData = data.users;
+        } else if (data.data && Array.isArray(data.data)) {
+          usersData = data.data;
+        }
+        
         setUsers(usersData);
+        console.log(`✅ Loaded ${usersData.length} users from database`);
       } else {
-        console.error('Failed to fetch users from database');
-        setUsers(mockUsers);
+        console.error('Failed to fetch users, status:', response.status);
+        setUsers([]);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      setUsers(mockUsers);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          setUsers(users.filter(user => user.id !== userId));
-          alert('User deleted successfully');
-        } else {
-          alert('Failed to delete user');
+    if (!window.confirm('⚠️ Are you sure you want to permanently delete this user? This action cannot be undone!')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      console.log(`🗑️ Attempting to delete user ID: ${userId}`);
+      
+      const response = await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Error deleting user');
+      });
+      
+      console.log('Delete response status:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Delete result:', result);
+        
+        // Remove user from state immediately
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+        alert('✅ User deleted successfully from database');
+        
+        // Optionally refresh the list to confirm
+        await fetchUsers();
+      } else {
+        const error = await response.json();
+        console.error('Delete failed:', error);
+        alert(`❌ Failed to delete user: ${error.error || 'Unknown error'}`);
       }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('❌ Network error while deleting user');
     }
   };
 
@@ -84,9 +119,7 @@ const AdminUsers = () => {
       });
       
       if (response.ok) {
-        const newUser = await response.json();
-        const userData = newUser.user || newUser.data || newUser;
-        setUsers([...users, userData]);
+        await fetchUsers(); // Refresh the list
         setShowAddModal(false);
         setFormData({
           firstName: '',
@@ -95,13 +128,14 @@ const AdminUsers = () => {
           category: 'student',
           password: ''
         });
-        alert('User added successfully');
+        alert('✅ User added successfully');
       } else {
-        alert('Failed to add user');
+        const error = await response.json();
+        alert(`❌ Failed to add user: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error adding user:', error);
-      alert('Error adding user');
+      alert('❌ Error adding user');
     }
   };
 
@@ -124,17 +158,16 @@ const AdminUsers = () => {
       });
       
       if (response.ok) {
-        const updatedUser = await response.json();
-        const userData = updatedUser.user || updatedUser.data || updatedUser;
-        setUsers(users.map(user => user.id === selectedUser.id ? userData : user));
+        await fetchUsers(); // Refresh the list
         setSelectedUser(null);
-        alert('User updated successfully');
+        alert('✅ User updated successfully');
       } else {
-        alert('Failed to update user');
+        const error = await response.json();
+        alert(`❌ Failed to update user: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Error updating user');
+      alert('❌ Error updating user');
     }
   };
 
@@ -176,9 +209,7 @@ const AdminUsers = () => {
     }
   };
 
-  // Function to go back to admin dashboard
   const goToAdminDashboard = () => {
-    console.log('Navigating to admin dashboard...');
     navigate('/admin-dashboard');
   };
 
@@ -188,7 +219,7 @@ const AdminUsers = () => {
 
   return (
     <div className="admin-users">
-      {/* BACK BUTTON - Top Left */}
+      {/* BACK BUTTON */}
       <div style={{ 
         marginBottom: '20px', 
         padding: '10px 0',
@@ -456,41 +487,5 @@ const AdminUsers = () => {
     </div>
   );
 };
-
-// Mock data for demonstration (fallback only)
-const mockUsers = [
-  {
-    id: 1,
-    firstName: 'Thabo',
-    lastName: 'Mokoena',
-    email: 'thabo.mokoena@example.com',
-    category: 'student',
-    createdAt: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: 2,
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.johnson@example.com',
-    category: 'tutor',
-    createdAt: '2024-01-10T09:00:00Z'
-  },
-  {
-    id: 3,
-    firstName: 'Mike',
-    lastName: 'Smith',
-    email: 'mike.smith@example.com',
-    category: 'admin',
-    createdAt: '2024-01-05T08:00:00Z'
-  },
-  {
-    id: 4,
-    firstName: 'Lerato',
-    lastName: 'Ndlovu',
-    email: 'lerato.ndlovu@example.com',
-    category: 'student',
-    createdAt: '2024-01-20T11:00:00Z'
-  }
-];
 
 export default AdminUsers;

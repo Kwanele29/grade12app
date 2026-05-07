@@ -119,37 +119,46 @@ const SignUp = () => {
         console.log('Backend response:', data);
 
         if (response.ok) {
-          // Registration successful
-          setSuccessMessage('Account created successfully! Redirecting...');
-          
-          // Store the user data and token immediately
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          
-          // Clear form
-          setFormData({
-            name: '',
-            surname: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            category: ''
-          });
-          setAgreeTerms(false);
-          
-          // Redirect based on role after 2 seconds
-          setTimeout(() => {
-            if (data.user.category === 'tutor') {
-              navigate('/tutor/subject-selection'); // Tutors go to subject selection first
-            } else if (data.user.category === 'student') {
-              navigate('/student/subject-selection'); // Students go to subject selection first
-            } else {
-              navigate('/login'); // Others go to login
-            }
-          }, 2000);
+          // Check if verification is required
+          if (data.requiresVerification) {
+            setSuccessMessage(
+              'Registration successful! Please check your email to verify your account.'
+            );
+            
+            // Clear form
+            setFormData({
+              name: '',
+              surname: '',
+              email: '',
+              password: '',
+              confirmPassword: '',
+              category: ''
+            });
+            setAgreeTerms(false);
+            
+            // Redirect to login after 3 seconds
+            setTimeout(() => {
+              navigate('/login?registered=true');
+            }, 3000);
+          } else {
+            // Old behavior for backwards compatibility
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            setSuccessMessage('Account created successfully! Redirecting...');
+            
+            setTimeout(() => {
+              if (data.user.category === 'tutor') {
+                navigate('/tutor/subject-selection');
+              } else if (data.user.category === 'student') {
+                navigate('/student/subject-selection');
+              } else {
+                navigate('/login');
+              }
+            }, 2000);
+          }
           
         } else {
-          // Registration failed
           setErrors({ 
             submit: data.message || 'Registration failed. Please try again.' 
           });

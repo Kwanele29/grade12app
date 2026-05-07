@@ -1,6 +1,7 @@
 package com.grade12.backend.controller;
 
 import com.grade12.backend.model.Material;
+import com.grade12.backend.repository.MaterialRepository;
 import com.grade12.backend.service.MaterialService;
 import com.grade12.backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +18,16 @@ import java.util.Map;
 @RequestMapping("/api/materials")
 @CrossOrigin(origins = "http://localhost:3000")
 public class MaterialController {
-    
+
     @Autowired
     private MaterialService materialService;
-    
+
     @Autowired
     private FileStorageService fileStorageService;
-    
+
+    @Autowired
+    private MaterialRepository materialRepository;
+
     @PostMapping("/upload")
     public ResponseEntity<?> uploadMaterial(
             @RequestParam("file") MultipartFile file,
@@ -33,26 +37,19 @@ public class MaterialController {
             @RequestParam(value = "topic", required = false) String topic,
             @RequestParam(value = "tags", required = false) String tags,
             @RequestParam("tutorId") Long tutorId) {
-        
+
         try {
-            // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Please select a file"));
             }
-            
-            // Validate file size (100MB max)
             if (file.getSize() > 100 * 1024 * 1024) {
                 return ResponseEntity.badRequest().body(Map.of("error", "File size must be less than 100MB"));
             }
-            
-            // Upload file to storage
+
             String fileUrl = fileStorageService.storeFile(file, tutorId);
             long fileSize = file.getSize();
-            
-            // Determine material type based on file extension
             String materialType = getMaterialType(file.getOriginalFilename());
-            
-            // Create material object
+
             Material material = new Material();
             material.setTitle(title);
             material.setDescription(description != null ? description : "");
@@ -63,24 +60,22 @@ public class MaterialController {
             if (tags != null && !tags.isEmpty()) {
                 material.setTags(tags.split(","));
             }
-            
-            // Save material with tutor and subject
+
             Material savedMaterial = materialService.createMaterial(material, tutorId, subjectId);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Material uploaded successfully");
             response.put("material", savedMaterial);
-            response.put("fileUrl", fileUrl);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to upload material: " + e.getMessage()));
         }
     }
-    
+
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<?> getMaterialsByTutor(@PathVariable Long tutorId) {
         try {
@@ -91,7 +86,7 @@ public class MaterialController {
                     .body(Map.of("error", "Failed to fetch materials: " + e.getMessage()));
         }
     }
-    
+
     @DeleteMapping("/{materialId}")
     public ResponseEntity<?> deleteMaterial(@PathVariable Long materialId) {
         try {
@@ -102,7 +97,7 @@ public class MaterialController {
                     .body(Map.of("error", "Failed to delete material: " + e.getMessage()));
         }
     }
-    
+
     @PostMapping("/{materialId}/view")
     public ResponseEntity<?> incrementViewCount(@PathVariable Long materialId) {
         try {
@@ -113,7 +108,7 @@ public class MaterialController {
                     .body(Map.of("error", "Failed to increment view count: " + e.getMessage()));
         }
     }
-    
+
     @PostMapping("/{materialId}/download")
     public ResponseEntity<?> incrementDownloadCount(@PathVariable Long materialId) {
         try {
@@ -124,10 +119,20 @@ public class MaterialController {
                     .body(Map.of("error", "Failed to increment download count: " + e.getMessage()));
         }
     }
-    
+
+    @GetMapping("/subject/{subjectId}")
+    public ResponseEntity<?> getMaterialsBySubject(@PathVariable Long subjectId) {
+        try {
+            List<Material> materials = materialRepository.findBySubjectId(subjectId);
+            return ResponseEntity.ok(materials);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     private String getMaterialType(String filename) {
         if (filename == null) return "other";
-        
         String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
         switch (extension) {
             case "pdf": return "pdf";

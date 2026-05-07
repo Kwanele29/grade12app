@@ -39,6 +39,12 @@ public class User {
     @Column(name = "email_verified")
     private boolean emailVerified = false;
     
+    @Column(name = "verification_token")
+    private String verificationToken;
+    
+    @Column(name = "verification_token_expiry")
+    private LocalDateTime verificationTokenExpiry;
+    
     private String category;
     
     @Column(name = "status")
@@ -117,6 +123,12 @@ public class User {
     
     public boolean isEmailVerified() { return emailVerified; }
     public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+    
+    public String getVerificationToken() { return verificationToken; }
+    public void setVerificationToken(String verificationToken) { this.verificationToken = verificationToken; }
+    
+    public LocalDateTime getVerificationTokenExpiry() { return verificationTokenExpiry; }
+    public void setVerificationTokenExpiry(LocalDateTime verificationTokenExpiry) { this.verificationTokenExpiry = verificationTokenExpiry; }
     
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
